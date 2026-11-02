@@ -1,0 +1,20 @@
+{
+  "name": "verdict-api",
+  "version": "0.1.0",
+  "description": "Pay-per-call verdicts for AI agents. x402 on Kite, reasoning by SERV.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "demo": "node demo/buyer.js",
+    "fixtures": "node tests/serve.js",
+    "eval": "node tests/eval.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "openai": "^4.67.0"
+  }
+}
