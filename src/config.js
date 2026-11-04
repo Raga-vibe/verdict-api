@@ -2,7 +2,7 @@ import "dotenv/config";
 
 export const config = {
   port: Number(process.env.PORT || 3000),
-  publicUrl: process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:3000",
+  publicUrl: (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:3000").replace(/\/+$/, ""),
   serv: {
     apiKey: process.env.SERV_API_KEY,
     model: process.env.SERV_MODEL || "gpt-5.4-mini",
