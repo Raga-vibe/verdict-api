@@ -54,8 +54,10 @@ async function post(path, body) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = await res.json().catch(() => ({}));
-  return { ok: res.ok, data };
+  const responseText = await res.text();
+  let data;
+  try { data = JSON.parse(responseText); } catch { data = null; }
+  return { ok: res.ok, status: res.status, statusText: res.statusText, data, responseText };
 }
 
 export function requirePayment(kind) {
@@ -78,6 +80,8 @@ export function requirePayment(kind) {
       return res.status(402).json({ error: "X-PAYMENT is not valid base64 JSON", accepts: [terms], x402Version: 1 });
     }
 
+    if (config.debug) console.log("[DEBUG] Decoded X-PAYMENT header:", JSON.stringify(payload, null, 2));
+
     // Body shape from Kite docs: { authorization, signature, network }.
     // VERIFY THIS against a real kpass payment on day 1-2 and adjust here only.
     const body = {
@@ -88,11 +92,13 @@ export function requirePayment(kind) {
     };
 
     const verify = await post("/v2/verify", body);
+    if (config.debug) console.log("[DEBUG] Full /v2/verify response:", JSON.stringify(verify, null, 2));
     if (!verify.ok || verify.data?.isValid === false) {
       return res.status(402).json({ error: "Payment verification failed", details: verify.data, accepts: [terms], x402Version: 1 });
     }
 
     const settle = await post("/v2/settle", body);
+    if (config.debug) console.log("[DEBUG] Full /v2/settle response:", JSON.stringify(settle, null, 2));
     if (!settle.ok || settle.data?.success === false) {
       return res.status(402).json({ error: "Payment settlement failed", details: settle.data, accepts: [terms], x402Version: 1 });
     }
