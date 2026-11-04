@@ -1,3 +1,4 @@
 node_modules
 .env
 data/*.jsonl
+cloudflared-windows-amd64.exe

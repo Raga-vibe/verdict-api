@@ -21,7 +21,7 @@ export const config = {
 
 // Price list in US cents. Change freely.
 export const PRICES = {
-  claim: 2,
-  link: 3,
-  token: 5,
+  claim: 1,
+  link: 1,
+  token: 1,
 };
