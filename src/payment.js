@@ -1,5 +1,7 @@
-// x402 seller side, following docs.gokite.ai/passport/seller
-// Flow: no X-PAYMENT -> 402 with terms. With X-PAYMENT -> verify -> settle -> next().
+// x402 v2 seller flow: exact EVM payment on Kite, verified and settled by Pieverse.
+import { HTTPFacilitatorClient } from "@x402/core/server";
+import { paymentMiddleware, x402ResourceServer } from "@x402/express";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { config, PRICES } from "./config.js";
 
 const OUTPUT_SCHEMA = {
@@ -12,33 +14,46 @@ const OUTPUT_SCHEMA = {
   type: "object",
 };
 
-function centsToWei(cents) {
-  // 1 token = 1 USD (stablecoin). cents/100 * 10^decimals
+function centsToUnits(cents) {
   return (BigInt(cents) * 10n ** BigInt(config.payments.decimals) / 100n).toString();
 }
 
-export function paymentTerms(kind, req) {
+function paymentOption(kind) {
   return {
-    scheme: "gokite-aa",
+    scheme: "exact",
     network: config.payments.network,
-    maxAmountRequired: centsToWei(PRICES[kind]),
-    resource: `${config.publicUrl}/verdict/${kind}`,
-    description: `Verdict API - ${kind} check (${PRICES[kind]} cents)`,
-    mimeType: "application/json",
-    outputSchema: {
-      input: {
-        discoverable: true,
-        method: "POST",
-        bodyFields: inputFields(kind),
-        type: "http",
-      },
-      output: OUTPUT_SCHEMA,
+    price: {
+      asset: config.payments.asset,
+      amount: centsToUnits(PRICES[kind]),
+      extra: { name: "pieUSD", version: "1" },
     },
     payTo: config.payments.payTo,
-    maxTimeoutSeconds: 300,
-    asset: config.payments.asset,
-    extra: null,
-    merchantName: "Verdict API",
+    maxTimeoutSeconds: 60,
+  };
+}
+
+export function paymentTerms(kind) {
+  const description = `Verdict API - ${kind} check (${PRICES[kind]} cents)`;
+  return {
+    x402Version: 2,
+    resource: {
+      url: `${config.publicUrl}/verdict/${kind}`,
+      description,
+      mimeType: "application/json",
+    },
+    accepts: [{
+      scheme: "exact",
+      network: config.payments.network,
+      amount: centsToUnits(PRICES[kind]),
+      asset: config.payments.asset,
+      payTo: config.payments.payTo,
+      maxTimeoutSeconds: 60,
+      extra: { name: "pieUSD", version: "1" },
+    }],
+    outputSchema: {
+      input: { discoverable: true, method: "POST", bodyFields: inputFields(kind), type: "http" },
+      output: OUTPUT_SCHEMA,
+    },
   };
 }
 
@@ -48,63 +63,67 @@ function inputFields(kind) {
   return { address: { type: "string", required: true, description: "Token contract address" }, chain: { type: "string", required: false, description: "e.g. base, bsc, solana" } };
 }
 
-async function post(path, body) {
-  const res = await fetch(config.payments.facilitator + path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const responseText = await res.text();
-  let data;
-  try { data = JSON.parse(responseText); } catch { data = null; }
-  return { ok: res.ok, status: res.status, statusText: res.statusText, data, responseText };
-}
+const baseFacilitator = new HTTPFacilitatorClient({ url: config.payments.facilitator });
+const loggedFacilitator = {
+  getSupported: (...args) => baseFacilitator.getSupported(...args),
+  async verify(payload, requirements) {
+    if (config.debug) console.log("[DEBUG] Decoded PAYMENT-SIGNATURE payload:", JSON.stringify(payload, null, 2));
+    try {
+      const response = await baseFacilitator.verify(payload, requirements);
+      if (config.debug) console.log("[DEBUG] Full /v2/verify response:", JSON.stringify(response, null, 2));
+      return response;
+    } catch (error) {
+      if (config.debug) console.error("[DEBUG] /v2/verify error:", String(error?.stack || error));
+      throw error;
+    }
+  },
+  async settle(payload, requirements) {
+    try {
+      const response = await baseFacilitator.settle(payload, requirements);
+      if (config.debug) console.log("[DEBUG] Full /v2/settle response:", JSON.stringify(response, null, 2));
+      return response;
+    } catch (error) {
+      if (config.debug) console.error("[DEBUG] /v2/settle error:", String(error?.stack || error));
+      throw error;
+    }
+  },
+};
+
+const resourceServer = new x402ResourceServer(loggedFacilitator)
+  .register(config.payments.network, new ExactEvmScheme());
 
 export function requirePayment(kind) {
-  return async (req, res, next) => {
-    if (config.payments.mode === "off") {
+  if (config.payments.mode === "off") {
+    return (req, res, next) => {
       req.payment = { mode: "off", amountCents: PRICES[kind] };
-      return next();
-    }
-
-    const header = req.get("X-PAYMENT");
-    const terms = paymentTerms(kind, req);
-    if (!header) {
-      return res.status(402).json({ error: "X-PAYMENT header is required", accepts: [terms], x402Version: 1 });
-    }
-
-    let payload;
-    try {
-      payload = JSON.parse(Buffer.from(header, "base64").toString("utf8"));
-    } catch {
-      return res.status(402).json({ error: "X-PAYMENT is not valid base64 JSON", accepts: [terms], x402Version: 1 });
-    }
-
-    if (config.debug) console.log("[DEBUG] Decoded X-PAYMENT header:", JSON.stringify(payload, null, 2));
-
-    // Body shape from Kite docs: { authorization, signature, network }.
-    // VERIFY THIS against a real kpass payment on day 1-2 and adjust here only.
-    const body = {
-      authorization: payload.authorization ?? payload.payload?.authorization,
-      signature: payload.signature ?? payload.payload?.signature,
-      network: config.payments.network,
-      paymentRequirements: terms,
+      next();
     };
+  }
 
-    const verify = await post("/v2/verify", body);
-    if (config.debug) console.log("[DEBUG] Full /v2/verify response:", JSON.stringify(verify, null, 2));
-    if (!verify.ok || verify.data?.isValid === false) {
-      return res.status(402).json({ error: "Payment verification failed", details: verify.data, accepts: [terms], x402Version: 1 });
-    }
+  const middleware = paymentMiddleware({
+    [`POST /verdict/${kind}`]: {
+      accepts: [paymentOption(kind)],
+      description: `Verdict API - ${kind} check (${PRICES[kind]} cents)`,
+      mimeType: "application/json",
+    },
+  }, resourceServer);
 
-    const settle = await post("/v2/settle", body);
-    if (config.debug) console.log("[DEBUG] Full /v2/settle response:", JSON.stringify(settle, null, 2));
-    if (!settle.ok || settle.data?.success === false) {
-      return res.status(402).json({ error: "Payment settlement failed", details: settle.data, accepts: [terms], x402Version: 1 });
-    }
-
-    req.payment = { mode: "x402", amountCents: PRICES[kind], tx: settle.data?.transaction ?? settle.data?.txHash ?? null, settle: settle.data };
-    res.set("X-PAYMENT-RESPONSE", Buffer.from(JSON.stringify(settle.data)).toString("base64"));
-    next();
+  return (req, res, next) => {
+    const continueAfterPayment = (error) => {
+      if (error) return next(error);
+      let settlement = null;
+      const responseHeader = res.getHeader("PAYMENT-RESPONSE") || res.getHeader("X-PAYMENT-RESPONSE");
+      if (responseHeader) {
+        try { settlement = JSON.parse(Buffer.from(String(responseHeader), "base64").toString("utf8")); } catch {}
+      }
+      req.payment = {
+        mode: "x402",
+        amountCents: PRICES[kind],
+        tx: settlement?.transaction ?? settlement?.transactionHash ?? settlement?.txHash ?? null,
+        settle: settlement,
+      };
+      next();
+    };
+    Promise.resolve(middleware(req, res, continueAfterPayment)).catch(next);
   };
 }
