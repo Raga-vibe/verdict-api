@@ -12,9 +12,10 @@ const TESTNET = "eip155:2368";
 const TESTNET_PIEUSD = "0x38129cf4CE5E183eFF248F42A7D345Bb1B47621A";
 const ONE_CENT_WEI = 10_000_000_000_000_000n;
 
-const privateKey = process.env.BUYER_PRIVATE_KEY;
-if (!/^0x[0-9a-f]{64}$/i.test(privateKey || "")) {
-  throw new Error("Set BUYER_PRIVATE_KEY in the ignored local .env file (0x-prefixed 32-byte key). Never paste it into chat.");
+const configuredPrivateKey = process.env.BUYER_PRIVATE_KEY?.trim() || "";
+const privateKey = configuredPrivateKey.startsWith("0x") ? configuredPrivateKey : `0x${configuredPrivateKey}`;
+if (!/^0x[0-9a-f]{64}$/i.test(privateKey)) {
+  throw new Error("Set BUYER_PRIVATE_KEY in the ignored local .env file as a 32-byte hex key. Never paste it into chat.");
 }
 
 const account = privateKeyToAccount(privateKey);
