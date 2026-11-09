@@ -47,13 +47,19 @@ export async function runVerdict(kind, evidence, { rawHtml = "" } = {}) {
   let result = parse(first.text);
   let model = first.model;
 
-  // Hard case: retry with Multipath if unparseable or low confidence
+  // Hard case: retry with the hard SERV model if unparseable or low
+  // confidence. The retry must never fail the whole call: if the hard
+  // model name is wrong or the call errors, keep the first result.
   if (!result || (typeof result.confidence === "number" && result.confidence < 0.6)) {
-    const second = await askServ({ system, user, hard: true });
-    const r2 = parse(second.text);
-    if (r2) {
-      result = r2;
-      model = second.model;
+    try {
+      const second = await askServ({ system, user, hard: true });
+      const r2 = parse(second.text);
+      if (r2) {
+        result = r2;
+        model = second.model;
+      }
+    } catch (e) {
+      console.error(`[Verdict] hard-model retry failed, keeping first result: ${e.message}`);
     }
   }
 

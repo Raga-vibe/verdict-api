@@ -13,7 +13,8 @@ Built for OpenServ SERV Hackathon Edition 02 (Kite track).
 | `POST /verdict/token` | 5¢ | `{ address, chain? }` | safe / risky / scam / unclear |
 | `GET /verdict/:kind/terms` | free | | x402 payment terms |
 | `GET /stats` | free | | calls and earnings |
-| `GET /dashboard` | free | | earnings dashboard (live at `/dashboard`) |
+| `GET /dashboard` | free | | earnings dashboard (total calls, earned, calls by endpoint, verdict mix, last 10 verdicts with explorer links) |
+| `GET /` | free | | landing page for browsers, JSON for API clients |
 
 ## How a call works
 
@@ -21,7 +22,7 @@ Built for OpenServ SERV Hackathon Edition 02 (Kite track).
 2. Agent's Kite Passport pays and resends with a `PAYMENT-SIGNATURE` header (x402 v2).
 3. We verify and settle through the Pieverse facilitator.
 4. We fetch evidence (page text, sources, DexScreener data).
-5. **SERV Reasoning** decides, with Prompt Guard and Shadow Agent on. Low-confidence cases retry with **Multipath**.
+5. **SERV Reasoning** decides, with Prompt Guard and Shadow Agent on. Low-confidence cases retry with the hard SERV model (`SERV_HARD_MODEL`); if that retry fails, the first result is kept instead of failing the call.
 6. Our code checks every quoted reason really exists in the evidence. No verified quote, no confident verdict.
 7. A receipt is logged.
 
@@ -39,7 +40,7 @@ Start with `PAYMENTS_MODE=off`, switch to `on` once your Kite wallet is set up. 
 
 Paid run against the live API instead: `VERDICT_URL=https://verdict-api-t50q.onrender.com SCAM_URL=https://<public-scam-page> HONEST_URL=https://<public-honest-page> npm run demo`.
 
-Watch earnings at `GET /dashboard` (total calls, cents earned, calls by endpoint, last 10 verdicts with Kite testnet explorer links). It refreshes every 3 seconds.
+Open `http://localhost:3000/` in a browser for the landing page (pricing, how it works, free payment-terms try-it), and watch earnings at `GET /dashboard` (total calls, cents earned, calls by endpoint, verdict mix, last 10 verdicts with Kite testnet explorer links). It refreshes every 3 seconds. Note: receipts live on the server and reset when Render redeploys or restarts the free instance.
 
 ## Example response
 
