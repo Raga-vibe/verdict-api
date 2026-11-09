@@ -159,7 +159,7 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div class="kv" id="terms"><div class="row"><div class="k">Terms</div><div class="v">Loading...</div></div></div>
 <details><summary>View the full terms as JSON</summary><pre id="terms-json">Loading...</pre></details>
 <p class="sub" style="margin-top:20px">Then pay it for real:</p>
-<pre>curl -X POST https://verdict-api-t50q.onrender.com/verdict/link -H "Content-Type: application/json" -d '{"url": "https://example.com"}'
+<pre id="curl-example">curl -X POST https://verdict-api-t50q.onrender.com/verdict/link -H "Content-Type: application/json" -d '{"url": "https://example.com"}'
 # First reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.</pre>
 </section>
 
@@ -180,7 +180,13 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <script>
 var box = document.getElementById("terms");
 var full = document.getElementById("terms-json");
+var curlPre = document.getElementById("curl-example");
 var btns = document.querySelectorAll(".tabs button");
+var curlBodies = {
+  claim: '{"claim": "Example Domain is for documentation", "sources": ["https://example.com"]}',
+  link: '{"url": "https://example.com"}',
+  token: '{"address": "0xTokenContractAddress"}'
+};
 function shortAddr(a) { return a ? a.slice(0, 6) + "..." + a.slice(-4) : "-"; }
 function row(k, v, sub) {
   var r = document.createElement("div"); r.className = "row";
@@ -192,6 +198,7 @@ function row(k, v, sub) {
 }
 function load(kind) {
   btns.forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-kind") === kind); });
+  curlPre.textContent = "curl -X POST https://verdict-api-t50q.onrender.com/verdict/" + kind + ' -H "Content-Type: application/json" -d \'' + curlBodies[kind] + "'\n# First reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.";
   box.replaceChildren(row("Terms", "Loading..."));
   full.textContent = "Loading...";
   fetch("/verdict/" + kind + "/terms").then(function (r) { return r.json(); }).then(function (j) {
