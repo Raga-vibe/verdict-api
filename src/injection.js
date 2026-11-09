@@ -1,9 +1,21 @@
+// Instruction-like phrases only. A bare mention of "AI agents" or
+// "assistant" on a normal page is not an attack, so those words alone
+// must never flag a page. Every pattern below needs an imperative
+// aimed at the agent reading the page.
 const ATTACK_PHRASES = [
-  /ignore\s+(?:all\s+of\s+)?your\s+instructions/gi,
-  /AI\s+agents?/gi,
-  /assistant/gi,
+  /ignore\s+(?:all\s+of\s+)?(?:your|these|previous)\s+instructions/gi,
+  /disregard\s+(?:all\s+)?(?:your|these|previous)\s+instructions/gi,
   /verified\s+safe\s*,?\s*buy\s+now/gi,
+  /ai\s+agents?\b[^.]{0,100}?\b(?:buy\s+now|ignore|disregard)\b/gi,
 ];
+
+function matchesAttack(text) {
+  for (const regex of ATTACK_PHRASES) {
+    regex.lastIndex = 0;
+    if (regex.test(text)) return true;
+  }
+  return false;
+}
 
 function visibleText(html) {
   return html
@@ -44,9 +56,12 @@ export function scanInjection(rawHtml = "") {
   const snippets = new Set();
   if (!rawHtml) return { found: false, snippets: [] };
 
+  // Hidden text only counts when it carries an instruction-like phrase.
+  // An ordinary HTML comment (copyright, build tag, analytics note)
+  // must not flag the page.
   for (const match of rawHtml.matchAll(/<!--([\s\S]*?)-->/g)) {
     const text = visibleText(match[1]);
-    if (text) snippets.add(text);
+    if (text && matchesAttack(text)) snippets.add(text);
   }
 
   const hiddenSelectors = new Set();
@@ -67,7 +82,7 @@ export function scanInjection(rawHtml = "") {
     const hiddenByRule = classNames.some((name) => hiddenSelectors.has(`.${name}`)) || (id && hiddenSelectors.has(`#${id}`));
     if (isHiddenStyle(inlineStyle) || hiddenByRule) {
       const text = visibleText(match[3]);
-      if (text) snippets.add(text);
+      if (text && matchesAttack(text)) snippets.add(text);
     }
   }
 

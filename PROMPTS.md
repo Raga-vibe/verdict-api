@@ -3,6 +3,14 @@
 Open this folder in Antigravity. Paste one prompt at a time. Test before moving on.
 Small steps save your free weekly quota.
 
+## Status (Nov 9, 2026)
+- Steps 1-5 done, including a real paid call on Kite testnet. Prices restored to 2¢ / 3¢ / 5¢ after the temporary 1¢ payment test.
+- Step 6 done: `demo/buyer.js` is now the shopping agent (scam refused, honest proceeds). It pays directly with a buyer key instead of the kpass CLI, capped at 5¢ per call.
+- Step 7 done: `GET /dashboard` is live.
+- Step 8 done: live at https://verdict-api-t50q.onrender.com.
+- Also fixed: the injection scanner only flags hidden text that carries an instruction-like phrase, so ordinary comments and pages that merely mention AI assistants no longer trip it.
+- Still to run before submitting: `npm run eval` and `npm run demo` with a real SERV key (needs `SERV_API_KEY`, and a funded testnet buyer key for the paid demo).
+
 ## Step 0: Before you start (you do this)
 - Redeem your $5 SERV credit code at console.openserv.ai and create an API key.
 - Turn on data collection: console.openserv.ai/settings/organization (needed to qualify).

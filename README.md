@@ -13,11 +13,12 @@ Built for OpenServ SERV Hackathon Edition 02 (Kite track).
 | `POST /verdict/token` | 5¢ | `{ address, chain? }` | safe / risky / scam / unclear |
 | `GET /verdict/:kind/terms` | free | | x402 payment terms |
 | `GET /stats` | free | | calls and earnings |
+| `GET /dashboard` | free | | earnings dashboard (live at `/dashboard`) |
 
 ## How a call works
 
 1. Agent calls an endpoint with no payment, gets **402** with Kite x402 terms.
-2. Agent's Kite Passport pays and resends with `X-PAYMENT`.
+2. Agent's Kite Passport pays and resends with a `PAYMENT-SIGNATURE` header (x402 v2).
 3. We verify and settle through the Pieverse facilitator.
 4. We fetch evidence (page text, sources, DexScreener data).
 5. **SERV Reasoning** decides, with Prompt Guard and Shadow Agent on. Low-confidence cases retry with **Multipath**.
@@ -29,11 +30,16 @@ Built for OpenServ SERV Hackathon Edition 02 (Kite track).
 ```bash
 npm install
 cp .env.example .env   # add SERV_API_KEY
-npm run dev
-npm run demo -- https://some-shop.example
+npm run dev            # terminal 1, PAYMENTS_MODE=off for a free run
+npm run fixtures       # terminal 2, serves tests/fixtures on :4000
+npm run demo           # terminal 3, shopping agent: scam page refused, honest page proceeds
 ```
 
-Start with `PAYMENTS_MODE=off`, switch to `on` once your Kite wallet is set up.
+Start with `PAYMENTS_MODE=off`, switch to `on` once your Kite wallet is set up. With payments on, the demo needs a funded testnet buyer key (`BUYER_PRIVATE_KEY` in the ignored local `.env`); it pays 3¢ per check and refuses to sign more than 5¢ per call.
+
+Paid run against the live API instead: `VERDICT_URL=https://verdict-api-t50q.onrender.com SCAM_URL=https://<public-scam-page> HONEST_URL=https://<public-honest-page> npm run demo`.
+
+Watch earnings at `GET /dashboard` (total calls, cents earned, calls by endpoint, last 10 verdicts with Kite testnet explorer links). It refreshes every 3 seconds.
 
 ## Example response
 

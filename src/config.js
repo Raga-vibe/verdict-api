@@ -25,8 +25,9 @@ export const config = {
 };
 
 // Price list in US cents. Change freely.
+// Restored from the temporary 1-cent payment-test prices (Nov 4).
 export const PRICES = {
-  claim: 1,
-  link: 1,
-  token: 1,
+  claim: 2,
+  link: 3,
+  token: 5,
 };

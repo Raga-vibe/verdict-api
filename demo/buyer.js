@@ -1,65 +1,113 @@
+// Demo shopping agent (Step 6 of PROMPTS.md).
+//
+// The agent is told to buy sneakers. Before it pays any shop, it asks
+// Verdict API first and pays 3 cents per check over x402 on Kite testnet:
+//   1. Scam page  -> verdict "scam", the agent refuses to buy.
+//   2. Honest page -> verdict "safe", the agent proceeds (demo only,
+//      no real purchase is made).
+//
+// Run it locally (recommended for a screen recording):
+//   npm run dev          # terminal 1, PAYMENTS_MODE=off for a free run
+//   npm run fixtures     # terminal 2, serves tests/fixtures on :4000
+//   npm run demo         # terminal 3
+//
+// Paid run against the live API:
+//   VERDICT_URL=https://verdict-api-t50q.onrender.com \
+//   SCAM_URL=https://<public-scam-page> HONEST_URL=https://<public-honest-page> \
+//   BUYER_PRIVATE_KEY=<funded testnet key> npm run demo
+// The key is only needed when the server answers 402. With
+// PAYMENTS_MODE=off the demo runs without a key. Never commit the key
+// or paste it into chat; keep it in the ignored local .env file.
+//
+// Usage: node demo/buyer.js [scam-url] [honest-url]
 import "dotenv/config";
 import { randomBytes } from "node:crypto";
 import { privateKeyToAccount } from "viem/accounts";
 
-const BASE = process.env.VERDICT_URL || "https://verdict-api-t50q.onrender.com";
-const URL = `${BASE.replace(/\/+$/, "")}/verdict/claim`;
-const BODY = {
-  claim: "Example Domain is for documentation",
-  sources: ["https://example.com"],
-};
+const BASE = (process.env.VERDICT_URL || "http://localhost:3000").replace(/\/+$/, "");
+const URL = `${BASE}/verdict/link`;
 const TESTNET = "eip155:2368";
 const TESTNET_PIEUSD = "0x38129cf4CE5E183eFF248F42A7D345Bb1B47621A";
-const ONE_CENT_WEI = 10_000_000_000_000_000n;
+// 5 cents in pieUSD units (18 decimals): the most this demo will sign per call.
+const MAX_UNITS_PER_CALL = 50_000_000_000_000_000n;
 
-const configuredPrivateKey = process.env.BUYER_PRIVATE_KEY?.trim() || "";
-const privateKey = configuredPrivateKey.startsWith("0x") ? configuredPrivateKey : `0x${configuredPrivateKey}`;
-if (!/^0x[0-9a-f]{64}$/i.test(privateKey)) {
-  throw new Error("Set BUYER_PRIVATE_KEY in the ignored local .env file as a 32-byte hex key. Never paste it into chat.");
+const isLocal = BASE.includes("localhost") || BASE.includes("127.0.0.1");
+const SCAM_URL = process.argv[2] || process.env.SCAM_URL
+  || (isLocal ? "http://localhost:4000/scam-1.html" : "");
+const HONEST_URL = process.argv[3] || process.env.HONEST_URL
+  || (isLocal ? "http://localhost:4000/honest-1.html" : "");
+if (!SCAM_URL || !HONEST_URL) {
+  console.error("Usage: node demo/buyer.js [scam-url] [honest-url]");
+  console.error("Against the live API, pass two public page URLs (the server cannot fetch localhost).");
+  process.exit(1);
 }
 
-const account = privateKeyToAccount(privateKey);
 const baseHeaders = { "Content-Type": "application/json", Accept: "application/json" };
+
+function account() {
+  const raw = (process.env.BUYER_PRIVATE_KEY || "").trim();
+  const key = raw.startsWith("0x") ? raw : `0x${raw}`;
+  if (!/^0x[0-9a-f]{64}$/i.test(key)) {
+    throw new Error("Server asked for payment, but no buyer key is set. Set BUYER_PRIVATE_KEY in the ignored local .env file as a 32-byte hex key (funded with testnet pieUSD), or run the server with PAYMENTS_MODE=off. Never paste the key into chat.");
+  }
+  return privateKeyToAccount(key);
+}
 
 async function readResponse(response) {
   const text = await response.text();
   try { return { text, data: JSON.parse(text) }; } catch { return { text, data: null }; }
 }
 
-const probe = await fetch(URL, {
-  method: "POST",
-  headers: baseHeaders,
-  body: JSON.stringify(BODY),
-});
-const probeResponse = await readResponse(probe);
+function settlementFrom(response) {
+  const header = response.headers.get("payment-response") || response.headers.get("x-payment-response");
+  if (!header) return { settlement: null, txHash: null };
+  let settlement = null;
+  try { settlement = JSON.parse(Buffer.from(header, "base64").toString("utf8")); }
+  catch { settlement = { raw: header }; }
+  const txHash = settlement?.transaction ?? settlement?.transactionHash ?? settlement?.txHash ?? null;
+  return { settlement, txHash };
+}
 
-if (probe.status !== 402) {
-  console.error(`Expected HTTP 402 challenge; got HTTP ${probe.status}: ${probeResponse.text}`);
-  process.exitCode = 1;
-} else {
+// One paid (or free, when payments are off) verdict check.
+async function checkPage(pageUrl, label) {
+  console.log(`\n--- ${label}: ${pageUrl}`);
+  console.log("Step 1: Asking Verdict API before buying anything.");
+  const body = JSON.stringify({ url: pageUrl });
+  const probe = await fetch(URL, { method: "POST", headers: baseHeaders, body });
+  const probeResponse = await readResponse(probe);
+
+  if (probe.ok) {
+    console.log("Step 2: No payment needed (server is running with PAYMENTS_MODE=off).");
+    return { ...probeResponse.data, paid: false, txHash: null };
+  }
+
+  if (probe.status !== 402) {
+    throw new Error(`Verdict call failed: HTTP ${probe.status} ${probeResponse.text}`);
+  }
+
   let challenge = probeResponse.data;
   const paymentRequired = probe.headers.get("payment-required") || probe.headers.get("x-payment-required");
   if (paymentRequired) {
     try { challenge = JSON.parse(Buffer.from(paymentRequired, "base64").toString("utf8")); }
     catch { throw new Error("Server returned a malformed PAYMENT-REQUIRED header"); }
   }
-
   if (challenge?.x402Version !== 2) throw new Error(`Expected x402Version 2; received ${challenge?.x402Version ?? "none"}`);
   const requirement = challenge.accepts?.find((item) => item.scheme === "exact" && item.network === TESTNET);
   if (!requirement) throw new Error("The challenge does not offer exact payments on Kite testnet (eip155:2368).");
   if (requirement.asset?.toLowerCase() !== TESTNET_PIEUSD.toLowerCase()) {
     throw new Error(`Unexpected payment token in challenge: ${requirement.asset}`);
   }
-
   const amount = BigInt(requirement.amount);
-  if (amount <= 0n || amount > ONE_CENT_WEI) {
-    throw new Error(`Refusing to sign ${amount} units: the demo is capped at 1 cent per attempt.`);
+  if (amount <= 0n || amount > MAX_UNITS_PER_CALL) {
+    throw new Error(`Refusing to sign ${amount} units: the demo is capped at 5 cents per call.`);
   }
+  console.log(`Step 2: Paying ${(Number(amount) / 1e18).toFixed(3)} pieUSD (3 cents) over x402 on Kite testnet.`);
 
+  const buyer = account();
   const now = Math.floor(Date.now() / 1000);
   const validBefore = BigInt(now + Math.min(Number(requirement.maxTimeoutSeconds || 60), 60));
   const nonce = `0x${randomBytes(32).toString("hex")}`;
-  const signature = await account.signTypedData({
+  const signature = await buyer.signTypedData({
     domain: {
       name: requirement.extra?.name || "pieUSD",
       version: requirement.extra?.version || "1",
@@ -77,16 +125,8 @@ if (probe.status !== 402) {
       ],
     },
     primaryType: "TransferWithAuthorization",
-    message: {
-      from: account.address,
-      to: requirement.payTo,
-      value: amount,
-      validAfter: 0n,
-      validBefore,
-      nonce,
-    },
+    message: { from: buyer.address, to: requirement.payTo, value: amount, validAfter: 0n, validBefore, nonce },
   });
-
   const signatureHex = signature.slice(2);
   let v = Number.parseInt(signatureHex.slice(128, 130), 16);
   if (v < 27) v += 27;
@@ -95,7 +135,7 @@ if (probe.status !== 402) {
     scheme: "exact",
     network: TESTNET,
     authorization: {
-      from: account.address,
+      from: buyer.address,
       to: requirement.payTo,
       value: amount.toString(),
       validAfter: 0,
@@ -106,26 +146,49 @@ if (probe.status !== 402) {
       s: `0x${signatureHex.slice(64, 128)}`,
     },
   };
-  const paymentSignature = Buffer.from(JSON.stringify(payload)).toString("base64");
-
   const paid = await fetch(URL, {
     method: "POST",
-    headers: { ...baseHeaders, "PAYMENT-SIGNATURE": paymentSignature },
-    body: JSON.stringify(BODY),
+    headers: { ...baseHeaders, "PAYMENT-SIGNATURE": Buffer.from(JSON.stringify(payload)).toString("base64") },
+    body,
   });
   const paidResponse = await readResponse(paid);
-  if (!paid.ok) {
-    console.error(`Paid request failed: HTTP ${paid.status} ${paid.statusText}`);
-    console.error(paidResponse.text);
-    process.exitCode = 1;
-  } else {
-    const receiptHeader = paid.headers.get("payment-response") || paid.headers.get("x-payment-response");
-    let settlement = null;
-    if (receiptHeader) {
-      try { settlement = JSON.parse(Buffer.from(receiptHeader, "base64").toString("utf8")); }
-      catch { settlement = { raw: receiptHeader }; }
-    }
-    const txHash = settlement?.transaction ?? settlement?.transactionHash ?? settlement?.txHash ?? null;
-    console.log(JSON.stringify({ verdict: paidResponse.data?.verdict, confidence: paidResponse.data?.confidence, response: paidResponse.data, settlement, transactionHash: txHash, explorerUrl: txHash ? `https://testnet.kitescan.ai/tx/${txHash}` : null }, null, 2));
-  }
+  if (!paid.ok) throw new Error(`Paid request failed: HTTP ${paid.status} ${paidResponse.text}`);
+  const { txHash } = settlementFrom(paid);
+  if (txHash) console.log(`Step 3: Payment settled. Tx: https://testnet.kitescan.ai/tx/${txHash}`);
+  else console.log("Step 3: Payment settled (no tx hash returned).");
+  return { ...paidResponse.data, paid: true, txHash };
+}
+
+function printVerdict(result) {
+  console.log(`Verdict: ${result.verdict} (confidence ${result.confidence})`);
+  if (result.summary) console.log(`Why: ${result.summary}`);
+  if (result.injection_detected) console.log("Note: hidden instruction-like text was detected on this page.");
+}
+
+console.log("Shopping agent: I was told to buy sneakers.");
+console.log(`Verdict API: ${BASE}`);
+
+const scam = await checkPage(SCAM_URL, "Check 1: the sneakers page");
+printVerdict(scam);
+const refused = scam.verdict === "scam" || scam.verdict === "risky";
+if (refused) console.log("Decision: REFUSING to buy. Verdict is scam/risky, so no money goes to this shop.");
+else console.log(`Decision: WARNING, expected scam/risky but got "${scam.verdict}". Not buying anyway in this demo.`);
+
+const honest = await checkPage(HONEST_URL, "Check 2: an honest shop instead");
+printVerdict(honest);
+const proceeded = honest.verdict === "safe";
+if (proceeded) console.log("Decision: PROCEEDING to checkout at the honest shop (demo only, no real purchase).");
+else console.log(`Decision: NOT proceeding. Honest shop came back "${honest.verdict}", so the agent stops.`);
+
+console.log("\n--- Demo summary ---");
+console.log(JSON.stringify({
+  scam_page: { url: SCAM_URL, verdict: scam.verdict, confidence: scam.confidence, paid: scam.paid, tx: scam.txHash },
+  honest_page: { url: HONEST_URL, verdict: honest.verdict, confidence: honest.confidence, paid: honest.paid, tx: honest.txHash },
+  refused_scam: refused,
+  proceeded_honest: proceeded,
+}, null, 2));
+
+if (!refused || !proceeded) {
+  console.error("\nDemo expectation not met: expected scam/risky then safe.");
+  process.exitCode = 1;
 }
