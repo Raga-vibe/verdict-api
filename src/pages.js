@@ -4,7 +4,7 @@
 // come from /stats at runtime, so the page can never show stale figures.
 
 const CSS = `
-:root{--bg:#020617;--panel:#0e1223;--panel2:#111827;--line:#334155;--text:#f8fafc;--muted:#94a3b8;--accent:#f59e0b;--green:#22c55e;--amber:#fbbf24;--red:#ef4444;--blue:#60a5fa}
+:root{--bg:#020617;--panel:#0e1223;--panel2:#111827;--line:#334155;--text:#f8fafc;--muted:#94a3b8;--accent:#f59e0b;--green:#22c55e;--amber:#fbbf24;--red:#ef4444;--blue:#60a5fa;--font-display:"Space Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace}
 *{box-sizing:border-box}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -14,14 +14,27 @@ a:hover{text-decoration:underline}
 .wrap{max-width:1020px;margin:0 auto;padding:0 20px}
 header.top{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(10,15,30,.92);backdrop-filter:blur(6px);z-index:10}
 header.top .wrap{display:flex;align-items:center;gap:20px;height:58px}
-.logo{font-weight:800;font-size:18px;color:#fff;letter-spacing:-.02em}
+.logo{font-family:var(--font-display);font-weight:700;font-size:18px;color:#fff;letter-spacing:-.02em}
 .logo span{color:var(--accent)}
 nav{margin-left:auto;display:flex;gap:18px;font-size:14px}
 nav a{color:var(--muted)}
 nav a:hover{color:#fff;text-decoration:none}
 .hero{padding:64px 0 40px}
-.eyebrow{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase}
-.hero h1{font-size:44px;line-height:1.1;margin:14px 0 16px;letter-spacing:-.03em;color:#fff}
+.hero-grid{display:grid;gap:32px;align-items:start}
+@media(min-width:860px){.hero-grid{grid-template-columns:1.05fr .95fr}}
+.eyebrow{color:var(--accent);font-weight:600;font-size:14px}
+.hero h1{font-family:var(--font-display);font-size:44px;line-height:1.08;margin:14px 0 16px;letter-spacing:-.03em;color:#fff}
+.receipt{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;position:relative}
+.receipt-head{display:flex;justify-content:space-between;gap:12px;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.receipt-head .tag{color:var(--amber);font-weight:700}
+.stamp{position:absolute;top:38px;right:16px;border:3px solid var(--red);color:var(--red);font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.08em;padding:2px 10px;border-radius:6px;transform:rotate(-4deg);animation:stamp-in .25s ease-out both}
+@keyframes stamp-in{from{opacity:0;transform:rotate(-4deg) scale(1.4)}to{opacity:1;transform:rotate(-4deg) scale(1)}}
+.receipt .row{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.receipt .row:last-of-type{border-bottom:0}
+.receipt .k{color:var(--muted);flex:0 0 auto}
+.receipt .v{color:#fff;text-align:right;word-break:break-word;font-family:var(--font-mono);font-size:13px}
+.receipt .v .badge{font-family:var(--font-display)}
+.receipt-foot{font-size:13px;color:var(--muted);margin:12px 0 0}
 .hero p.lede{font-size:19px;color:var(--muted);max-width:640px;margin:0 0 24px}
 .btns{display:flex;gap:12px;flex-wrap:wrap}
 .btn{display:inline-block;padding:11px 20px;border-radius:8px;font-weight:700;font-size:15px;border:1px solid var(--line);color:#fff;background:var(--panel)}
@@ -32,13 +45,13 @@ nav a:hover{color:#fff;text-decoration:none}
 .pill b{color:var(--green);font-weight:700}
 .pill .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}
 section{padding:36px 0}
-h2{font-size:24px;letter-spacing:-.02em;color:#fff;margin:0 0 8px}
+h2{font-family:var(--font-display);font-size:24px;letter-spacing:-.02em;color:#fff;margin:0 0 8px}
 .sub{color:var(--muted);margin:0 0 20px;max-width:640px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
 .card h3{margin:0 0 6px;font-size:16px;color:#fff}
 .card p{margin:0;color:var(--muted);font-size:14px}
-.card .price{font-size:30px;font-weight:800;color:#fff}
+.card .price{font-family:var(--font-display);font-size:30px;font-weight:700;color:#fff}
 .card .price small{font-size:14px;color:var(--muted);font-weight:600}
 .card code{color:var(--accent);font-size:13px}
 .steps{counter-reset:step}
@@ -98,7 +111,7 @@ th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06
 .kpi .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(245,158,11,.12);color:var(--accent);margin-bottom:12px}
 .kpi .icon svg{width:20px;height:20px}
 .kpi .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
-.kpi .value{font-size:32px;font-weight:800;letter-spacing:-.02em;color:#fff;margin:6px 0 2px;line-height:1.1}
+.kpi .value{font-family:var(--font-display);font-size:32px;font-weight:700;letter-spacing:-.02em;color:#fff;margin:6px 0 2px;line-height:1.1}
 .kpi .sub{font-size:13px;color:var(--muted)}
 .panels{display:grid;gap:16px;margin:8px 0}
 @media(min-width:860px){.panels{grid-template-columns:1fr 1fr}}
@@ -127,6 +140,7 @@ th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06
 function shell({ title, body }) {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <title>${title}</title><style>${CSS}</style></head>
 <body>${body}</body></html>`;
 }
@@ -142,8 +156,9 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
   const shortAddr = (a) => (a ? a.slice(0, 6) + "..." + a.slice(-4) : "not set");
   const body = `${topNav("home")}
 <main class="wrap">
-<div class="hero">
-<div class="eyebrow">OpenServ SERV Hackathon 02 &middot; Kite track</div>
+<div class="hero"><div class="hero-grid">
+<div>
+<div class="eyebrow">OpenServ SERV Hackathon 02, Kite track</div>
 <h1>A paid second opinion<br>for AI agents.</h1>
 <p class="lede">Before an agent buys, signs up or trades, it asks Verdict API &ldquo;is this safe?&rdquo;, pays a few cents over x402 on Kite, and gets a clear verdict with quoted evidence. Reasoning by SERV, payments by Kite Passport.</p>
 <div class="btns"><a class="btn primary" href="/dashboard">View the dashboard</a><a class="btn" href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">Read the README</a></div>
@@ -154,6 +169,19 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <span class="pill">Seller ${shortAddr(payTo)}</span>
 </div>
 </div>
+<aside class="receipt" aria-label="Example verdict receipt">
+<div class="receipt-head"><span>Verdict receipt</span><span class="tag">Example</span></div>
+<div class="stamp" aria-hidden="true">Scam</div>
+<div class="row" style="margin-top:52px"><span class="k">Subject</span><span class="v">fake-brand-sneakers.example</span></div>
+<div class="row"><span class="k">Verdict</span><span class="v"><span class="badge scam">scam</span></span></div>
+<div class="row"><span class="k">Confidence</span><span class="v">86%</span></div>
+<div class="row"><span class="k">Evidence</span><span class="v">&ldquo;send USDT to 0x&hellip;&rdquo;</span></div>
+<div class="row"><span class="k">Injection</span><span class="v">flagged</span></div>
+<div class="row"><span class="k">Paid</span><span class="v">3&cent; pieUSD</span></div>
+<div class="row"><span class="k">Tx</span><span class="v">0xabc123&hellip;7890</span></div>
+<p class="receipt-foot">An example from the demo agent. Every paid call returns a receipt like this, with the reason SERV gave. <a href="/dashboard">See real ones on the dashboard</a>.</p>
+</aside>
+</div></div>
 
 <section>
 <h2>How a call works</h2>
@@ -170,9 +198,9 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <h2>Pricing</h2>
 <p class="sub">Pay per call, in pieUSD on Kite testnet. No subscription, no free tier to abuse.</p>
 <div class="grid">
-<div class="card"><h3>Claim</h3><div class="price">${prices.claim}<small> &cent;</small></div><p><code>POST /verdict/claim</code></p><p>Is this claim supported by its sources? Verdicts: true / false / unclear.</p></div>
-<div class="card"><h3>Link</h3><div class="price">${prices.link}<small> &cent;</small></div><p><code>POST /verdict/link</code></p><p>Is this page safe to buy from or sign up on? Verdicts: safe / risky / scam / unclear.</p></div>
-<div class="card"><h3>Token</h3><div class="price">${prices.token}<small> &cent;</small></div><p><code>POST /verdict/token</code></p><p>Is this token a reasonable buy or a likely rug pull? Verdicts: safe / risky / scam / unclear.</p></div>
+<div class="card"><h3>Claim</h3><div class="price">${prices.claim}<small> &cent;</small></div><p><code>POST /v1/verdict/claim</code></p><p>Is this claim supported by its sources? Verdicts: true / false / unclear.</p></div>
+<div class="card"><h3>Link</h3><div class="price">${prices.link}<small> &cent;</small></div><p><code>POST /v1/verdict/link</code></p><p>Is this page safe to buy from or sign up on? Verdicts: safe / risky / scam / unclear.</p></div>
+<div class="card"><h3>Token</h3><div class="price">${prices.token}<small> &cent;</small></div><p><code>POST /v1/verdict/token</code></p><p>Is this token a reasonable buy or a likely rug pull? Verdicts: safe / risky / scam / unclear.</p></div>
 </div>
 </section>
 
@@ -197,21 +225,14 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div class="kv" id="terms"><div class="row"><div class="k">Terms</div><div class="v">Loading...</div></div></div>
 <details><summary>View the full terms as JSON</summary><pre id="terms-json">Loading...</pre></details>
 <p class="sub" style="margin-top:20px">Then pay it for real:</p>
-<pre id="curl-example">curl -X POST https://verdict-api-t50q.onrender.com/verdict/link -H "Content-Type: application/json" -d '{"url": "https://example.com"}'
+<pre id="curl-example">curl -X POST https://verdict-api-t50q.onrender.com/v1/verdict/link -H "Content-Type: application/json" -d '{"url": "https://example.com"}'
 # First reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.</pre>
 </section>
 
 <section>
-<h2>What an agent gets back</h2>
-<pre>{
-  "verdict": "scam",
-  "confidence": 0.86,
-  "summary": "Brand store on an unrelated domain asking for crypto to a personal wallet.",
-  "reasons": [{ "point": "Payment only in USDT to a wallet", "quote": "send USDT to 0x..." }],
-  "injection_detected": true,
-  "checks": { "quotes_verified": 3, "quotes_dropped": 0 },
-  "receipt": "..."
-}</pre>
+<h2>Built for agents, documented for humans</h2>
+<p class="sub">Version 1 lives under /v1/. The unversioned paths still work. Errors always come back as an error message plus a stable code, like VALIDATION_ERROR or NOT_FOUND.</p>
+<div class="btns"><a class="btn" href="/openapi.json">OpenAPI spec</a><a class="btn" href="/health">Health check</a><a class="btn" href="/stats">Stats as JSON</a><a class="btn" href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">README</a></div>
 </section>
 </main>
 <footer><div class="wrap">Verdict API &middot; Built for the OpenServ SERV Hackathon Edition 02, Kite track. Reasoning by SERV, payments by x402 on Kite. <a href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">Source on GitHub</a></div></footer>
@@ -236,10 +257,10 @@ function row(k, v, sub) {
 }
 function load(kind) {
   btns.forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-kind") === kind); });
-  curlPre.textContent = 'curl -X POST https://verdict-api-t50q.onrender.com/verdict/' + kind + ' -H "Content-Type: application/json" -d \\'' + JSON.stringify(curlBodies[kind]) + "'\\n# First reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.";
+  curlPre.textContent = 'curl -X POST https://verdict-api-t50q.onrender.com/v1/verdict/' + kind + ' -H "Content-Type: application/json" -d \\'' + JSON.stringify(curlBodies[kind]) + "'\\n# First reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.";
   box.replaceChildren(row("Terms", "Loading..."));
   full.textContent = "Loading...";
-  fetch("/verdict/" + kind + "/terms").then(function (r) { return r.json(); }).then(function (j) {
+  fetch("/v1/verdict/" + kind + "/terms").then(function (r) { return r.json(); }).then(function (j) {
     var a = (j.accepts && j.accepts[0]) || {};
     var cents = a.amount ? (Number(a.amount) / 1e16).toFixed(0) : "?";
     var fields = j.outputSchema && j.outputSchema.input && j.outputSchema.input.bodyFields

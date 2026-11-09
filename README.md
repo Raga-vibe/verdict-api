@@ -6,15 +6,27 @@ Built for OpenServ SERV Hackathon Edition 02 (Kite track).
 
 ## Endpoints
 
+Version 1 lives under `/v1/`. The unversioned `/verdict/...` paths still work for existing clients; new clients should use `/v1/`.
+
 | Endpoint | Price | Input | Verdicts |
 |---|---|---|---|
-| `POST /verdict/claim` | 2¢ | `{ claim, sources? }` | true / false / unclear |
-| `POST /verdict/link` | 3¢ | `{ url }` | safe / risky / scam / unclear |
-| `POST /verdict/token` | 5¢ | `{ address, chain? }` | safe / risky / scam / unclear |
-| `GET /verdict/:kind/terms` | free | | x402 payment terms |
-| `GET /stats` | free | | calls and earnings |
-| `GET /dashboard` | free | | earnings dashboard (total calls, earned, calls by endpoint, verdict mix, last 10 verdicts with explorer links) |
+| `POST /v1/verdict/claim` | 2¢ | `{ claim, sources? }` | true / false / unclear |
+| `POST /v1/verdict/link` | 3¢ | `{ url }` | safe / risky / scam / unclear |
+| `POST /v1/verdict/token` | 5¢ | `{ address, chain? }` | safe / risky / scam / unclear |
+| `GET /v1/verdict/:kind/terms` | free | | x402 payment terms |
+| `GET /health` | free | | `{ status, version, payments, timestamp }` |
+| `GET /openapi.json` | free | | OpenAPI 3.0 spec, generated from the live config |
+| `GET /stats` | free | `?limit=` (default 10, max 50), `?offset=` | calls and earnings |
+| `GET /dashboard` | free | | earnings dashboard (KPI cards, calls by endpoint, verdict mix, recent verdicts as cards with the SERV reason, filters, Pause updates) |
 | `GET /` | free | | landing page for browsers, JSON for API clients |
+
+## API details
+
+- **Errors** always come back as `{ "error": "<human message>", "code": "<MACHINE_CODE>" }`, with an extra `detail` on failures and `path` on 404s. Codes: `VALIDATION_ERROR` (400), `UNKNOWN_KIND` (404), `NOT_FOUND` (404), `METHOD_NOT_ALLOWED` (405, with an `Allow: POST` header), `VERDICT_FAILED` (500), `INTERNAL_ERROR` (500). A `GET` on a POST-only verdict path is a 405, never an HTML error page.
+- **Versioning:** breaking changes go under a new `/vN/` prefix; the current paths are v1 (`"version": "1.0.0"` in `GET /` and `/health`).
+- **Pagination:** `/stats` pages recent verdicts with `?limit=` and `?offset=`, newest first, and returns `limit`, `offset` and `total`.
+- **Rate limiting:** the paid verdict endpoints are payment-gated, which is the limit that matters: every call costs 2-5¢. The free read endpoints (`/health`, `/stats`, `/openapi.json`, terms) are unmetered on the free tier.
+- **Idempotency:** not yet implemented. A retried call is a new paid call, so agents should retry only on network errors, never after a 200. The x402 payment signature itself is single-use per the facilitator.
 
 ## How a call works
 
@@ -40,7 +52,7 @@ Start with `PAYMENTS_MODE=off`, switch to `on` once your Kite wallet is set up. 
 
 Paid run against the live API instead: `VERDICT_URL=https://verdict-api-t50q.onrender.com SCAM_URL=https://<public-scam-page> HONEST_URL=https://<public-honest-page> npm run demo`.
 
-Open `http://localhost:3000/` in a browser for the landing page (pricing, how it works, free payment-terms try-it), and watch earnings at `GET /dashboard` (total calls, cents earned, calls by endpoint, verdict mix, last 10 verdicts with Kite testnet explorer links). It refreshes every 3 seconds. Note: receipts live on the server and reset when Render redeploys or restarts the free instance.
+Open `http://localhost:3000/` in a browser for the landing page (pricing, how it works, free payment-terms try-it), and watch earnings at `GET /dashboard` (KPI cards, calls by endpoint, verdict mix, recent verdicts with the SERV reason, filters, Pause updates). It refreshes every 3 seconds unless paused. Note: receipts live on the server and reset when Render redeploys or restarts the free instance.
 
 ## Example response
 

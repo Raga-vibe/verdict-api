@@ -25,7 +25,7 @@ import { randomBytes } from "node:crypto";
 import { privateKeyToAccount } from "viem/accounts";
 
 const BASE = (process.env.VERDICT_URL || "http://localhost:3000").replace(/\/+$/, "");
-const URL = `${BASE}/verdict/link`;
+const URL = `${BASE}/v1/verdict/link`;
 const TESTNET = "eip155:2368";
 const TESTNET_PIEUSD = "0x38129cf4CE5E183eFF248F42A7D345Bb1B47621A";
 // 5 cents in pieUSD units (18 decimals): the most this demo will sign per call.

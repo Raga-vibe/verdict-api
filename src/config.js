@@ -31,3 +31,7 @@ export const PRICES = {
   link: 3,
   token: 5,
 };
+
+// API version. The canonical paths are /v1/...; the unversioned
+// /verdict/... paths still work for existing clients.
+export const API_VERSION = "1.0.0";

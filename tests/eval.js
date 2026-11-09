@@ -14,7 +14,7 @@ for (const testCase of cases) {
   let injection = "—";
   let passed = false;
   try {
-    const response = await fetch("http://localhost:3000/verdict/link", {
+    const response = await fetch("http://localhost:3000/v1/verdict/link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: `http://localhost:4000/${testCase.file}` }),

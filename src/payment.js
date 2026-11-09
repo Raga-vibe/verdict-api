@@ -32,12 +32,12 @@ function paymentOption(kind) {
   };
 }
 
-export function paymentTerms(kind) {
+export function paymentTerms(kind, base = "") {
   const description = `Verdict API - ${kind} check (${PRICES[kind]} cents)`;
   return {
     x402Version: 2,
     resource: {
-      url: `${config.publicUrl}/verdict/${kind}`,
+      url: `${config.publicUrl}${base}/verdict/${kind}`,
       description,
       mimeType: "application/json",
     },
@@ -92,7 +92,7 @@ const loggedFacilitator = {
 const resourceServer = new x402ResourceServer(loggedFacilitator)
   .register(config.payments.network, new ExactEvmScheme());
 
-export function requirePayment(kind) {
+export function requirePayment(kind, base = "") {
   if (config.payments.mode === "off") {
     return (req, res, next) => {
       req.payment = { mode: "off", amountCents: PRICES[kind] };
@@ -101,7 +101,7 @@ export function requirePayment(kind) {
   }
 
   const middleware = paymentMiddleware({
-    [`POST /verdict/${kind}`]: {
+    [`POST ${base}/verdict/${kind}`]: {
       accepts: [paymentOption(kind)],
       description: `Verdict API - ${kind} check (${PRICES[kind]} cents)`,
       mimeType: "application/json",
