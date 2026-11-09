@@ -183,9 +183,9 @@ var full = document.getElementById("terms-json");
 var curlPre = document.getElementById("curl-example");
 var btns = document.querySelectorAll(".tabs button");
 var curlBodies = {
-  claim: '{"claim": "Example Domain is for documentation", "sources": ["https://example.com"]}',
-  link: '{"url": "https://example.com"}',
-  token: '{"address": "0xTokenContractAddress"}'
+  claim: { claim: "Example Domain is for documentation", sources: ["https://example.com"] },
+  link: { url: "https://example.com" },
+  token: { address: "0xTokenContractAddress" }
 };
 function shortAddr(a) { return a ? a.slice(0, 6) + "..." + a.slice(-4) : "-"; }
 function row(k, v, sub) {
@@ -198,7 +198,7 @@ function row(k, v, sub) {
 }
 function load(kind) {
   btns.forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-kind") === kind); });
-  curlPre.textContent = "curl -X POST https://verdict-api-t50q.onrender.com/verdict/" + kind + ' -H "Content-Type: application/json" -d \'' + curlBodies[kind] + "'\n# First reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.";
+  curlPre.textContent = 'curl -X POST https://verdict-api-t50q.onrender.com/verdict/' + kind + ' -H "Content-Type: application/json" -d \\'' + JSON.stringify(curlBodies[kind]) + "'\\n# First reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.";
   box.replaceChildren(row("Terms", "Loading..."));
   full.textContent = "Loading...";
   fetch("/verdict/" + kind + "/terms").then(function (r) { return r.json(); }).then(function (j) {
