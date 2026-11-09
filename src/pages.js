@@ -45,7 +45,18 @@ h2{font-size:24px;letter-spacing:-.02em;color:#fff;margin:0 0 8px}
 .step .n{flex:0 0 32px;height:32px;border-radius:50%;background:var(--accent);color:#111827;font-weight:800;display:flex;align-items:center;justify-content:center}
 .step h3{margin:2px 0 4px;font-size:16px;color:#fff}
 .step p{margin:0;color:var(--muted);font-size:14px}
-pre{background:#020617;border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.5;color:#cbd5e1}
+pre{background:#020617;border:1px solid var(--line);border-radius:10px;padding:16px;font-size:13px;line-height:1.5;color:#cbd5e1;white-space:pre-wrap;word-break:break-word;overflow-x:hidden}
+code{word-break:break-word}
+.kv{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.kv .row{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;align-items:baseline}
+.kv .row:last-child{border-bottom:0}
+.kv .k{flex:0 0 118px;color:var(--muted)}
+.kv .v{color:#fff;word-break:break-all}
+.kv .v small{color:var(--muted)}
+details{margin-top:12px}
+details summary{cursor:pointer;color:var(--muted);font-size:14px}
+details summary:hover{color:#fff}
+details pre{margin-top:10px;max-height:320px;overflow-y:auto}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .tabs button{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer}
 .tabs button.active{border-color:var(--accent);color:var(--accent)}
@@ -145,12 +156,11 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <button data-kind="link" class="active">Link &middot; ${prices.link}&cent;</button>
 <button data-kind="token">Token &middot; ${prices.token}&cent;</button>
 </div>
-<pre id="terms">Loading payment terms...</pre>
-<p class="sub">Then pay it for real:</p>
-<pre>curl -X POST https://verdict-api-t50q.onrender.com/verdict/link \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "https://example.com"}'
-# first reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.</pre>
+<div class="kv" id="terms"><div class="row"><div class="k">Terms</div><div class="v">Loading...</div></div></div>
+<details><summary>View the full terms as JSON</summary><pre id="terms-json">Loading...</pre></details>
+<p class="sub" style="margin-top:20px">Then pay it for real:</p>
+<pre>curl -X POST https://verdict-api-t50q.onrender.com/verdict/link -H "Content-Type: application/json" -d '{"url": "https://example.com"}'
+# First reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.</pre>
 </section>
 
 <section>
@@ -168,14 +178,41 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 </main>
 <footer><div class="wrap">Verdict API &middot; Built for the OpenServ SERV Hackathon Edition 02, Kite track. Reasoning by SERV, payments by x402 on Kite. <a href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">Source on GitHub</a></div></footer>
 <script>
-var pre = document.getElementById("terms");
+var box = document.getElementById("terms");
+var full = document.getElementById("terms-json");
 var btns = document.querySelectorAll(".tabs button");
+function shortAddr(a) { return a ? a.slice(0, 6) + "..." + a.slice(-4) : "-"; }
+function row(k, v, sub) {
+  var r = document.createElement("div"); r.className = "row";
+  var kk = document.createElement("div"); kk.className = "k"; kk.textContent = k;
+  var vv = document.createElement("div"); vv.className = "v"; vv.textContent = v;
+  if (sub) { vv.appendChild(document.createElement("br")); var s = document.createElement("small"); s.textContent = sub; vv.appendChild(s); }
+  r.appendChild(kk); r.appendChild(vv);
+  return r;
+}
 function load(kind) {
   btns.forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-kind") === kind); });
-  pre.textContent = "Loading payment terms...";
+  box.replaceChildren(row("Terms", "Loading..."));
+  full.textContent = "Loading...";
   fetch("/verdict/" + kind + "/terms").then(function (r) { return r.json(); }).then(function (j) {
-    pre.textContent = JSON.stringify(j, null, 2);
-  }).catch(function () { pre.textContent = "Could not load payment terms. Is the API awake?"; });
+    var a = (j.accepts && j.accepts[0]) || {};
+    var cents = a.amount ? (Number(a.amount) / 1e16).toFixed(0) : "?";
+    var fields = j.outputSchema && j.outputSchema.input && j.outputSchema.input.bodyFields
+      ? Object.keys(j.outputSchema.input.bodyFields).map(function (f) { return f + (j.outputSchema.input.bodyFields[f].required ? " (required)" : " (optional)"); }).join(", ")
+      : "-";
+    box.replaceChildren(
+      row("Price", cents + " cents", "in pieUSD on Kite testnet"),
+      row("Network", a.network || "-"),
+      row("Token", shortAddr(a.asset), a.asset || ""),
+      row("Pay to", shortAddr(a.payTo), a.payTo || ""),
+      row("You send", fields),
+      row("You get back", "verdict, confidence, reasons with quotes")
+    );
+    full.textContent = JSON.stringify(j, null, 2);
+  }).catch(function () {
+    box.replaceChildren(row("Terms", "Could not load. Is the API awake?"));
+    full.textContent = "Could not load payment terms.";
+  });
 }
 btns.forEach(function (b) { b.addEventListener("click", function () { load(b.getAttribute("data-kind")); }); });
 load("link");
