@@ -50,7 +50,7 @@ function handler(kind, getEvidence, validate) {
         const fetched = await getEvidence(req.body);
         const evidence = typeof fetched === "string" ? fetched : fetched.evidence;
         const result = await runVerdict(kind, evidence, { rawHtml: fetched.rawHtml || "" });
-        const receipt = logReceipt({ kind, input: req.body, verdict: result.verdict, confidence: result.confidence, paid_cents: req.payment.amountCents, payment_mode: req.payment.mode, tx: req.payment.tx ?? null, ms: Date.now() - started });
+        const receipt = logReceipt({ kind, input: req.body, verdict: result.verdict, confidence: result.confidence, summary: String(result.summary || "").slice(0, 280), injection_detected: result.injection_detected, model: result.model, quotes_verified: result.checks.quotes_verified, paid_cents: req.payment.amountCents, payment_mode: req.payment.mode, tx: req.payment.tx ?? null, ms: Date.now() - started });
         res.json({ ...result, receipt });
       } catch (e) {
         console.error(e);
@@ -75,13 +75,17 @@ app.get("/stats", (req, res) => {
   const r = readReceipts();
   const byKind = {};
   const byVerdict = {};
+  const earnedByKind = {};
   let paidCalls = 0;
   for (const x of r) {
     byKind[x.kind] = (byKind[x.kind] || 0) + 1;
     byVerdict[x.verdict] = (byVerdict[x.verdict] || 0) + 1;
-    if (x.payment_mode === "x402") paidCalls += 1;
+    if (x.payment_mode === "x402") {
+      paidCalls += 1;
+      earnedByKind[x.kind] = (earnedByKind[x.kind] || 0) + x.paid_cents;
+    }
   }
-  res.json({ calls: r.length, paid_calls: paidCalls, earned_cents: r.reduce((s, x) => s + (x.payment_mode === "x402" ? x.paid_cents : 0), 0), by_kind: byKind, by_verdict: byVerdict, recent: r.slice(-10).reverse() });
+  res.json({ calls: r.length, paid_calls: paidCalls, earned_cents: r.reduce((s, x) => s + (x.payment_mode === "x402" ? x.paid_cents : 0), 0), by_kind: byKind, by_verdict: byVerdict, earned_by_kind: earnedByKind, recent: r.slice(-10).reverse() });
 });
 
 app.listen(config.port, () => console.log(`Verdict API on :${config.port} (payments ${config.payments.mode})`));

@@ -4,8 +4,10 @@
 // come from /stats at runtime, so the page can never show stale figures.
 
 const CSS = `
-:root{--bg:#0a0f1e;--panel:#111827;--panel2:#0f172a;--line:#1e293b;--text:#e5e7eb;--muted:#94a3b8;--accent:#f59e0b;--green:#34d399;--amber:#fbbf24;--red:#f87171;--blue:#60a5fa}
+:root{--bg:#020617;--panel:#0e1223;--panel2:#111827;--line:#334155;--text:#f8fafc;--muted:#94a3b8;--accent:#f59e0b;--green:#22c55e;--amber:#fbbf24;--red:#ef4444;--blue:#60a5fa}
 *{box-sizing:border-box}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55}
 a{color:var(--blue);text-decoration:none}
 a:hover{text-decoration:underline}
@@ -83,8 +85,44 @@ th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06
 .empty code{color:var(--accent)}
 .live{font-size:13px;color:var(--muted)}
 .live b{color:var(--green)}
-@media(max-width:640px){.hero h1{font-size:32px}.hero{padding:40px 0 24px}}
-`;
+@media(max-width:640px){.hero h1{font-size:32px}.hero{padding:40px 0 24px}.wrap{padding:0 16px}nav{gap:12px;font-size:13px}.kpi .value{font-size:28px}}
+.dash-head{padding:48px 0 8px}
+.dash-head h1{font-size:34px}
+.refresh-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;font-size:13px;color:var(--muted)}
+.refresh-row .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}
+.pause-btn{min-height:44px;padding:10px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;transition:border-color .2s}
+.pause-btn:hover{border-color:var(--accent)}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:24px 0}
+@media(min-width:900px){.kpi-grid{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+.kpi .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(245,158,11,.12);color:var(--accent);margin-bottom:12px}
+.kpi .icon svg{width:20px;height:20px}
+.kpi .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.kpi .value{font-size:32px;font-weight:800;letter-spacing:-.02em;color:#fff;margin:6px 0 2px;line-height:1.1}
+.kpi .sub{font-size:13px;color:var(--muted)}
+.panels{display:grid;gap:16px;margin:8px 0}
+@media(min-width:860px){.panels{grid-template-columns:1fr 1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+.panel h3{margin:0 0 4px;font-size:16px;color:#fff}
+.panel .hint{font-size:13px;color:var(--muted);margin:0 0 16px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px}
+.chip{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:14px;cursor:pointer;transition:border-color .2s,color .2s}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:rgba(245,158,11,.08)}
+.verdict-list{display:grid;gap:12px;list-style:none;margin:16px 0 0;padding:0}
+.vcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.vcard-top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.vcard .subject{flex:1;min-width:200px;font-weight:700;color:#fff;font-size:15px;word-break:break-word}
+.vsummary{color:var(--muted);font-size:14px;margin:10px 0 0}
+.conf{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-top:12px}
+.conf .bar{flex:1;height:6px;max-width:180px;background:#1e293b;border-radius:3px;overflow:hidden}
+.conf .bar i{display:block;height:100%;background:var(--green)}
+.vmeta{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.flag{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:rgba(251,191,36,.12);color:var(--amber);font-size:12px;font-weight:700}
+.empty h3{color:#fff;font-size:16px;margin:0 0 6px}
+.empty p{margin:0 0 14px}
+.empty .steps{text-align:left;max-width:420px;margin:0 auto}
+.empty .steps li{margin:6px 0}`;
 
 function shell({ title, body }) {
   return `<!doctype html>
@@ -230,39 +268,57 @@ load("link");
 export function dashboardPage() {
   const body = `${topNav("dashboard")}
 <main class="wrap">
-<div class="hero" style="padding:44px 0 8px">
-<div class="eyebrow">Live earnings</div>
-<h1 style="font-size:34px">Dashboard</h1>
+<div class="dash-head">
+<div class="eyebrow">Live earnings &middot; Kite testnet</div>
+<h1>Dashboard</h1>
 <p class="lede" style="font-size:16px">Every paid verdict, as it happens. Payments by x402 on Kite testnet, reasoning by SERV.</p>
-<p class="live"><b>&#9679; Live</b> &middot; refreshes every 3 seconds &middot; <a href="/stats">raw stats JSON</a></p>
+<div class="refresh-row"><span><span class="dot"></span><b style="color:var(--green)">Live</b></span><span id="updated" role="status">Updated just now</span><button class="pause-btn" id="pause-btn" type="button" aria-pressed="false">Pause updates</button><a href="/stats">Raw stats JSON</a></div>
 </div>
 
-<section style="padding-top:8px">
-<div class="statgrid">
-<div class="stat"><div class="label">Total calls</div><div class="value" id="calls">-</div><div class="note" id="paid-note">-</div></div>
-<div class="stat"><div class="label">Earned</div><div class="value" id="earned">-</div><div class="note">Paid calls only. Free calls earn nothing.</div></div>
-<div class="stat"><div class="label">Calls by endpoint</div><div id="by-kind" style="margin-top:10px">-</div></div>
-<div class="stat"><div class="label">Verdicts</div><div id="by-verdict" style="margin-top:10px">-</div></div>
+<section style="padding-top:8px" aria-label="Key numbers">
+<div class="kpi-grid">
+<div class="kpi"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div><div class="label">Total calls</div><div class="value" id="kpi-calls">-</div><div class="sub" id="kpi-calls-sub">-</div></div>
+<div class="kpi"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.5-1.3-2.5-3-2.5s-3 .8-3 2 1 1.8 3 2.2 3 .8 3 2.3-1.3 2.5-3 2.5-3-1-3-2.5"/></svg></div><div class="label">Earned</div><div class="value" id="kpi-earned">-</div><div class="sub" id="kpi-earned-sub">Paid calls only</div></div>
+<div class="kpi"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg></div><div class="label">Paid calls</div><div class="value" id="kpi-paid">-</div><div class="sub" id="kpi-paid-sub">-</div></div>
+<div class="kpi"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/><path d="M12 8v4M12 16h.01"/></svg></div><div class="label">Scams stopped</div><div class="value" id="kpi-scam">-</div><div class="sub" id="kpi-scam-sub">-</div></div>
 </div>
 
-<h2>Recent verdicts</h2>
-<p class="sub">Newest first. Transaction links open on the Kite testnet explorer.</p>
-<div id="recent-wrap"><div class="empty">Loading...</div></div>
+<div class="panels">
+<div class="panel"><h3>Calls by endpoint</h3><p class="hint">Price per call: claim 2&cent;, link 3&cent;, token 5&cent;.</p><div id="by-kind">Loading...</div></div>
+<div class="panel"><h3>Verdict mix</h3><p class="hint">Scam and risky are the calls that stopped a bad spend.</p><div id="by-verdict">Loading...</div></div>
+</div>
+
+<h2 style="margin-top:32px">Recent verdicts</h2>
+<p class="sub">Newest first, with the reason SERV gave. Transaction links open on the Kite testnet explorer.</p>
+<div class="filters" role="group" aria-label="Filter verdicts">
+<button class="chip" type="button" data-filter="all" aria-pressed="true">All</button>
+<button class="chip" type="button" data-filter="safe" aria-pressed="false">Safe</button>
+<button class="chip" type="button" data-filter="risky" aria-pressed="false">Risky</button>
+<button class="chip" type="button" data-filter="scam" aria-pressed="false">Scam</button>
+<button class="chip" type="button" data-filter="true" aria-pressed="false">True</button>
+<button class="chip" type="button" data-filter="false" aria-pressed="false">False</button>
+<button class="chip" type="button" data-filter="unclear" aria-pressed="false">Unclear</button>
+</div>
+<div id="recent-wrap"><div class="empty"><h3>Loading...</h3></div></div>
 <p class="sub" style="margin-top:16px">Receipts live on the server and reset when Render redeploys or restarts the free instance. That is a property of free hosting, not of the verdicts: every paid call still settles on chain, and its transaction link stays valid.</p>
 </section>
 </main>
 <footer><div class="wrap">Verdict API &middot; <a href="/">Back to the API</a> &middot; <a href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">Source on GitHub</a></div></footer>
 <script>
+var recentData = [];
+var currentFilter = "all";
+var paused = false;
+var timer = null;
 function el(tag, text, cls) {
   var n = document.createElement(tag);
   if (text !== undefined && text !== null) n.textContent = text;
   if (cls) n.className = cls;
   return n;
 }
-function bars(host, obj, color) {
+function bars(host, obj, colors) {
   host.replaceChildren();
   var keys = Object.keys(obj || {});
-  if (!keys.length) { host.appendChild(el("div", "None yet.", "note")); return; }
+  if (!keys.length) { host.appendChild(el("div", "None yet.", "hint")); return; }
   var max = Math.max.apply(null, keys.map(function (k) { return obj[k]; }));
   keys.sort(function (a, b) { return obj[b] - obj[a]; }).forEach(function (k) {
     var row = el("div", null, "bar-row");
@@ -270,66 +326,131 @@ function bars(host, obj, color) {
     var bar = el("span", null, "bar");
     var fill = document.createElement("i");
     fill.style.width = Math.max(4, Math.round((obj[k] / max) * 100)) + "%";
-    if (color) fill.style.background = color;
+    fill.style.background = colors ? (colors[k] || "#f59e0b") : "#f59e0b";
     bar.appendChild(fill);
     row.appendChild(bar);
     row.appendChild(el("span", String(obj[k]), "count"));
     host.appendChild(row);
   });
 }
+function subjectFor(x) {
+  var inp = x.input || {};
+  if (inp.claim) return inp.claim;
+  if (inp.url) return inp.url;
+  if (inp.address) return inp.address;
+  return x.kind + " check";
+}
+function shortText(s, n) {
+  s = String(s || "");
+  return s.length > n ? s.slice(0, n - 1) + "..." : s;
+}
+function renderRecent() {
+  var wrap = document.getElementById("recent-wrap");
+  wrap.replaceChildren();
+  var items = recentData.filter(function (x) { return currentFilter === "all" || String(x.verdict).toLowerCase() === currentFilter; });
+  if (!recentData.length) {
+    var empty = el("div", null, "empty");
+    empty.appendChild(el("h3", "No calls yet"));
+    empty.appendChild(el("p", "The first paid verdict will appear here, with the reason SERV gave for it."));
+    var steps = document.createElement("ol");
+    steps.className = "steps";
+    var li1 = el("li"); li1.appendChild(document.createTextNode("Run the demo agent: ")); li1.appendChild(el("code", "npm run demo")); steps.appendChild(li1);
+    var li2 = el("li"); li2.appendChild(document.createTextNode("Or try a link, free, in the Try it section on the ")); var a = document.createElement("a"); a.href = "/"; a.textContent = "landing page"; li2.appendChild(a); steps.appendChild(li2);
+    var li3 = el("li", "Paid calls appear here within seconds.");
+    steps.appendChild(li3);
+    empty.appendChild(steps);
+    wrap.appendChild(empty);
+    return;
+  }
+  if (!items.length) {
+    var none = el("div", null, "empty");
+    none.appendChild(el("h3", "No " + currentFilter + " verdicts yet"));
+    none.appendChild(el("p", "Try another filter, or wait for the next call."));
+    wrap.appendChild(none);
+    return;
+  }
+  var list = document.createElement("ul");
+  list.className = "verdict-list";
+  items.forEach(function (x) {
+    var li = document.createElement("li");
+    li.className = "vcard";
+    var top = el("div", null, "vcard-top");
+    top.appendChild(el("span", shortText(subjectFor(x), 140), "subject"));
+    var badge = el("span", x.verdict, "badge " + String(x.verdict).toLowerCase());
+    top.appendChild(badge);
+    if (x.injection_detected) {
+      var flag = el("span", "Injection flagged", "flag");
+      top.appendChild(flag);
+    }
+    li.appendChild(top);
+    li.appendChild(el("p", x.summary || "No summary returned for this call.", "vsummary"));
+    var pct = Math.round(Number(x.confidence || 0) * 100);
+    var conf = el("div", null, "conf");
+    conf.appendChild(el("span", "Confidence " + pct + "%"));
+    var bar = el("span", null, "bar");
+    var fill = document.createElement("i");
+    fill.style.width = Math.max(4, pct) + "%";
+    var v = String(x.verdict).toLowerCase();
+    fill.style.background = v === "scam" || v === "false" ? "#ef4444" : v === "risky" ? "#fbbf24" : v === "unclear" ? "#94a3b8" : "#22c55e";
+    bar.appendChild(fill);
+    conf.appendChild(bar);
+    li.appendChild(conf);
+    var meta = el("div", null, "vmeta");
+    meta.appendChild(el("span", new Date(x.at).toLocaleString()));
+    meta.appendChild(el("span", x.kind + " check"));
+    meta.appendChild(el("span", x.payment_mode === "x402" ? x.paid_cents + "c paid" : "free, no payment"));
+    if (x.model) meta.appendChild(el("span", "Model " + x.model));
+    if (x.tx && /^[0-9a-fx]+$/i.test(x.tx)) {
+      var txa = document.createElement("a");
+      txa.href = "https://testnet.kitescan.ai/tx/" + x.tx;
+      txa.textContent = "View tx " + x.tx.slice(0, 10) + "...";
+      txa.target = "_blank"; txa.rel = "noreferrer";
+      meta.appendChild(txa);
+    }
+    li.appendChild(meta);
+    list.appendChild(li);
+  });
+  wrap.appendChild(list);
+}
 function refresh() {
   fetch("/stats").then(function (r) { return r.json(); }).then(function (s) {
-    document.getElementById("calls").textContent = s.calls;
-    document.getElementById("earned").textContent = "$" + (s.earned_cents / 100).toFixed(2);
-    document.getElementById("paid-note").textContent = (s.paid_calls || 0) + " paid, " + (s.calls - (s.paid_calls || 0)) + " free";
-    bars(document.getElementById("by-kind"), s.by_kind || {});
-    bars(document.getElementById("by-verdict"), s.by_verdict || {});
-    var wrap = document.getElementById("recent-wrap");
-    wrap.replaceChildren();
-    if (!s.recent || !s.recent.length) {
-      var empty = el("div", null, "empty");
-      empty.appendChild(document.createTextNode("No calls yet. The first paid verdict will appear here. Run the demo agent: "));
-      var code = el("code", "npm run demo");
-      empty.appendChild(code);
-      wrap.appendChild(empty);
-      return;
-    }
-    var table = document.createElement("table");
-    var head = document.createElement("thead");
-    var hr = document.createElement("tr");
-    ["When", "Kind", "Verdict", "Paid", "Tx"].forEach(function (h) { hr.appendChild(el("th", h)); });
-    head.appendChild(hr);
-    table.appendChild(head);
-    var body = document.createElement("tbody");
-    s.recent.forEach(function (x) {
-      var tr = document.createElement("tr");
-      tr.appendChild(el("td", new Date(x.at).toLocaleString()));
-      tr.appendChild(el("td", x.kind));
-      var vt = el("td");
-      var badge = el("span", x.verdict, "badge " + String(x.verdict).toLowerCase());
-      vt.appendChild(badge);
-      vt.appendChild(document.createTextNode(" " + x.confidence));
-      tr.appendChild(vt);
-      tr.appendChild(el("td", x.payment_mode === "x402" ? x.paid_cents + "c" : "free"));
-      var tx = el("td");
-      if (x.tx && /^[0-9a-fx]+$/i.test(x.tx)) {
-        var a = document.createElement("a");
-        a.href = "https://testnet.kitescan.ai/tx/" + x.tx;
-        a.textContent = x.tx.slice(0, 10) + "...";
-        a.target = "_blank"; a.rel = "noreferrer";
-        tx.appendChild(a);
-      } else { tx.textContent = "-"; }
-      tr.appendChild(tx);
-      body.appendChild(tr);
-    });
-    table.appendChild(body);
-    wrap.appendChild(table);
+    var paid = s.paid_calls || 0;
+    document.getElementById("kpi-calls").textContent = s.calls;
+    document.getElementById("kpi-calls-sub").textContent = paid + " paid, " + (s.calls - paid) + " free";
+    document.getElementById("kpi-earned").textContent = "$" + (s.earned_cents / 100).toFixed(2);
+    document.getElementById("kpi-earned-sub").textContent = paid ? "Avg " + (s.earned_cents / paid).toFixed(1) + "c per paid call" : "No paid calls yet";
+    document.getElementById("kpi-paid").textContent = paid;
+    document.getElementById("kpi-paid-sub").textContent = s.calls ? Math.round((paid / s.calls) * 100) + "% of all calls" : "No calls yet";
+    var bv = s.by_verdict || {};
+    document.getElementById("kpi-scam").textContent = bv.scam || 0;
+    document.getElementById("kpi-scam-sub").textContent = (bv.risky || 0) + " risky flagged";
+    bars(document.getElementById("by-kind"), s.by_kind || {}, { claim: "#f59e0b", link: "#60a5fa", token: "#22c55e" });
+    bars(document.getElementById("by-verdict"), bv, { safe: "#22c55e", "true": "#22c55e", risky: "#fbbf24", scam: "#ef4444", "false": "#ef4444", unclear: "#94a3b8" });
+    document.getElementById("updated").textContent = "Updated " + new Date().toLocaleTimeString();
+    recentData = s.recent || [];
+    renderRecent();
   }).catch(function () {
-    document.getElementById("recent-wrap").replaceChildren(el("div", "Could not load stats. Is the API awake?", "empty"));
+    var wrap = document.getElementById("recent-wrap");
+    wrap.replaceChildren(el("div", "Could not load stats. Is the API awake?", "empty"));
   });
 }
+document.querySelectorAll(".chip").forEach(function (b) {
+  b.addEventListener("click", function () {
+    currentFilter = b.getAttribute("data-filter");
+    document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", String(c === b)); });
+    renderRecent();
+  });
+});
+var pauseBtn = document.getElementById("pause-btn");
+pauseBtn.addEventListener("click", function () {
+  paused = !paused;
+  pauseBtn.setAttribute("aria-pressed", String(paused));
+  pauseBtn.textContent = paused ? "Resume updates" : "Pause updates";
+  if (paused) { clearInterval(timer); timer = null; }
+  else { refresh(); timer = setInterval(refresh, 3000); }
+});
 refresh();
-setInterval(refresh, 3000);
+timer = setInterval(refresh, 3000);
 </script>`;
   return shell({ title: "Verdict API dashboard — live earnings", body });
 }
