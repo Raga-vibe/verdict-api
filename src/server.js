@@ -73,7 +73,7 @@ function openapiDoc() {
     type: "object",
     properties: {
       error: { type: "string", description: "Human-readable message" },
-      code: { type: "string", description: "Stable machine-readable code: VALIDATION_ERROR, UNKNOWN_KIND, METHOD_NOT_ALLOWED, NOT_FOUND, VERDICT_FAILED, INTERNAL_ERROR" },
+      code: { type: "string", description: "Stable machine-readable code: VALIDATION_ERROR, UNKNOWN_KIND, METHOD_NOT_ALLOWED, NOT_FOUND, PAYMENT_REQUIRED, VERDICT_FAILED, INTERNAL_ERROR" },
       detail: { type: "string" },
       path: { type: "string" },
     },
@@ -98,7 +98,7 @@ function openapiDoc() {
     responses: {
       200: { description: "Verdict with quoted evidence", content: { "application/json": { schema: verdictSchema } } },
       400: { description: "Validation error", content: { "application/json": { schema: errorSchema } } },
-      402: { description: "Payment required: x402 v2 terms for this check", content: { "application/json": { schema: { type: "object", properties: { x402Version: { type: "integer" }, resource: { type: "object" }, accepts: { type: "array" } } } } } },
+      402: { description: "Payment required: x402 v2 terms for this check, plus the standard error envelope", content: { "application/json": { schema: { type: "object", properties: { x402Version: { type: "integer" }, resource: { type: "object" }, accepts: { type: "array" }, error: { type: "string", description: "Human-readable message saying what the check costs and how to pay" }, code: { type: "string", description: "PAYMENT_REQUIRED" } } } } } },
       405: { description: "Wrong method for this path", content: { "application/json": { schema: errorSchema } } },
       500: { description: "Verdict failed", content: { "application/json": { schema: errorSchema } } },
     },

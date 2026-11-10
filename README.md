@@ -22,7 +22,7 @@ Version 1 lives under `/v1/`. The unversioned `/verdict/...` paths still work fo
 
 ## API details
 
-- **Errors** always come back as `{ "error": "<human message>", "code": "<MACHINE_CODE>" }`, with an extra `detail` on failures and `path` on 404s. Codes: `VALIDATION_ERROR` (400), `UNKNOWN_KIND` (404), `NOT_FOUND` (404), `METHOD_NOT_ALLOWED` (405, with an `Allow: POST` header), `VERDICT_FAILED` (500), `INTERNAL_ERROR` (500). A `GET` on a POST-only verdict path is a 405, never an HTML error page.
+- **Errors** always come back as `{ "error": "<human message>", "code": "<MACHINE_CODE>" }`, with an extra `detail` on failures and `path` on 404s. Codes: `VALIDATION_ERROR` (400), `UNKNOWN_KIND` (404), `NOT_FOUND` (404), `METHOD_NOT_ALLOWED` (405, with an `Allow: POST` header), `VERDICT_FAILED` (500), `INTERNAL_ERROR` (500). A 402 is `PAYMENT_REQUIRED`: the body carries the full x402 terms (price, network, asset, pay-to) plus a human-readable hint, and the same terms are in the `payment-required` header, so both curl users and x402 clients can pay from the one response. A `GET` on a POST-only verdict path is a 405, never an HTML error page.
 - **Versioning:** breaking changes go under a new `/vN/` prefix; the current paths are v1 (`"version": "1.0.0"` in `GET /` and `/health`).
 - **Pagination:** `/stats` pages recent verdicts with `?limit=` and `?offset=`, newest first, and returns `limit`, `offset` and `total`.
 - **Rate limiting:** the paid verdict endpoints are payment-gated, which is the limit that matters: every call costs 2-5¢. The free read endpoints (`/health`, `/stats`, `/openapi.json`, terms) are unmetered on the free tier.

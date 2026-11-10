@@ -109,6 +109,23 @@ export function requirePayment(kind, base = "") {
   }, resourceServer);
 
   return (req, res, next) => {
+    // No payment attached yet: answer the 402 ourselves instead of the
+    // library's empty {} body, so a human testing with curl sees what to
+    // do next. The body is the same x402 terms object the
+    // payment-required header carries, plus the standard error envelope,
+    // so x402 clients and demo/buyer.js keep working exactly as before.
+    const signature = req.headers["payment-signature"] || req.headers["x-payment-signature"];
+    if (!signature) {
+      const terms = paymentTerms(kind, base);
+      const encoded = Buffer.from(JSON.stringify(terms)).toString("base64");
+      res.setHeader("payment-required", encoded);
+      res.setHeader("x-payment-required", encoded);
+      return res.status(402).json({
+        ...terms,
+        error: `Payment required: this ${kind} check costs ${PRICES[kind]} cents in pieUSD on Kite testnet (${config.payments.network}). Pay with x402 and resend with a PAYMENT-SIGNATURE header, or read the free terms at GET ${base}/verdict/${kind}/terms.`,
+        code: "PAYMENT_REQUIRED",
+      });
+    }
     const continueAfterPayment = (error) => {
       if (error) return next(error);
       let settlement = null;
