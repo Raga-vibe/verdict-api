@@ -20,6 +20,13 @@ for (const testCase of cases) {
       body: JSON.stringify({ url: `http://localhost:4000/${testCase.file}` }),
     });
     const result = await response.json();
+    if (response.status === 402) {
+      // Payments are on: the call was never judged, so this is not a
+      // failure of the verdict logic. Skip it and say how to run the
+      // eval for real instead of reporting six confusing errors.
+      rows.push({ file: testCase.file, expected: testCase.expected, actual: "SKIP", confidence: "—", injection_detected: "—", result: "SKIP" });
+      continue;
+    }
     if (!response.ok) throw new Error(result.detail || result.error || `HTTP ${response.status}`);
     verdict = result.verdict ?? "—";
     confidence = typeof result.confidence === "number" ? result.confidence.toFixed(2) : "—";
@@ -40,4 +47,6 @@ const widths = Object.fromEntries(columns.map((column) => [column, Math.max(colu
 console.log(columns.map((column) => column.padEnd(widths[column])).join(" | "));
 console.log(columns.map((column) => "-".repeat(widths[column])).join("-+-"));
 for (const row of rows) console.log(columns.map((column) => String(row[column]).padEnd(widths[column])).join(" | "));
-console.log(`\n${rows.filter((row) => row.result === "PASS").length}/${rows.length} passed`);
+const passed = rows.filter((row) => row.result === "PASS").length;
+const skipped = rows.filter((row) => row.result === "SKIP").length;
+console.log(`\n${passed}/${rows.length} passed${skipped ? `, ${skipped} skipped (payments are on; rerun with PAYMENTS_MODE=off)` : ""}`);

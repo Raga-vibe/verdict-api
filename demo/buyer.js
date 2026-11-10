@@ -23,6 +23,7 @@
 import "dotenv/config";
 import { randomBytes } from "node:crypto";
 import { privateKeyToAccount } from "viem/accounts";
+import { demoDecision } from "../src/states.js";
 
 const BASE = (process.env.VERDICT_URL || "http://localhost:3000").replace(/\/+$/, "");
 const URL = `${BASE}/v1/verdict/link`;
@@ -167,13 +168,13 @@ console.log(`Verdict API: ${BASE}`);
 
 const scam = await checkPage(SCAM_URL, "Check 1: the sneakers page");
 printVerdict(scam);
-const refused = scam.verdict === "scam" || scam.verdict === "risky";
+const refused = demoDecision(scam.verdict) === "refuse";
 if (refused) console.log("Decision: REFUSING to buy. Verdict is scam/risky, so no money goes to this shop.");
 else console.log(`Decision: WARNING, expected scam/risky but got "${scam.verdict}". Not buying anyway in this demo.`);
 
 const honest = await checkPage(HONEST_URL, "Check 2: an honest shop instead");
 printVerdict(honest);
-const proceeded = honest.verdict === "safe";
+const proceeded = demoDecision(honest.verdict) === "proceed";
 if (proceeded) console.log("Decision: PROCEEDING to checkout at the honest shop (demo only, no real purchase).");
 else console.log(`Decision: NOT proceeding. Honest shop came back "${honest.verdict}", so the agent stops.`);
 

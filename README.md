@@ -63,7 +63,7 @@ Open `http://localhost:3000/` in a browser for the landing page (pricing, how it
   "summary": "Brand store on an unrelated domain asking for crypto to a personal wallet.",
   "reasons": [{ "point": "Payment only in USDT to a wallet", "quote": "send USDT to 0x..." }],
   "injection_detected": true,
-  "checks": { "quotes_verified": 3, "quotes_dropped": 0 },
+  "checks": { "quotes_verified": 3, "quotes_dropped": 0, "stages": ["fetching_evidence", "scanning", "serv_first", "checking_quotes", "injection_override"] },
   "receipt": "..."
 }
 ```

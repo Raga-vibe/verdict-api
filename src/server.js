@@ -64,7 +64,7 @@ function openapiDoc() {
       summary: { type: "string", description: "One-sentence reason for the verdict" },
       reasons: { type: "array", items: { type: "object", properties: { point: { type: "string" }, quote: { type: "string", description: "Quoted word for word from the evidence, verified in code" } } } },
       injection_detected: { type: "boolean" },
-      checks: { type: "object", properties: { quotes_verified: { type: "integer" }, quotes_dropped: { type: "integer" } } },
+      checks: { type: "object", properties: { quotes_verified: { type: "integer" }, quotes_dropped: { type: "integer" }, stages: { type: "array", items: { type: "string" }, description: "Pipeline stages this call walked, in order (see src/states.js VERDICT_STAGES)" } } },
       model: { type: "string", description: "SERV model that produced the verdict" },
       receipt: { type: "string", description: "Receipt id for this paid call" },
     },
@@ -159,8 +159,8 @@ function handler(kind, getEvidence, validate, base) {
       try {
         const fetched = await getEvidence(req.body);
         const evidence = typeof fetched === "string" ? fetched : fetched.evidence;
-        const result = await runVerdict(kind, evidence, { rawHtml: fetched.rawHtml || "" });
-        const receipt = logReceipt({ kind, input: req.body, verdict: result.verdict, confidence: result.confidence, summary: String(result.summary || "").slice(0, 280), injection_detected: result.injection_detected, model: result.model, quotes_verified: result.checks.quotes_verified, paid_cents: req.payment.amountCents, payment_mode: req.payment.mode, tx: req.payment.tx ?? null, ms: Date.now() - started });
+        const result = await runVerdict(kind, evidence, { rawHtml: fetched.rawHtml || "", stages: ["fetching_evidence"] });
+        const receipt = logReceipt({ kind, input: req.body, verdict: result.verdict, confidence: result.confidence, summary: String(result.summary || "").slice(0, 280), injection_detected: result.injection_detected, model: result.model, quotes_verified: result.checks.quotes_verified, stages: result.checks.stages, paid_cents: req.payment.amountCents, payment_mode: req.payment.mode, tx: req.payment.tx ?? null, ms: Date.now() - started });
         res.json({ ...result, receipt });
       } catch (e) {
         console.error(e);

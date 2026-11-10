@@ -1,8 +1,10 @@
 // x402 v2 seller flow: exact EVM payment on Kite, verified and settled by Pieverse.
+import { AsyncLocalStorage } from "node:async_hooks";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { config, PRICES } from "./config.js";
+import { paymentRequiredBody, paymentFailedBody } from "./states.js";
 
 const OUTPUT_SCHEMA = {
   properties: {
@@ -64,17 +66,19 @@ function inputFields(kind) {
 }
 
 const baseFacilitator = new HTTPFacilitatorClient({ url: config.payments.facilitator });
-// Last verify outcome, so a failed payment can be explained instead of
-// answered with the library's empty {} body. Set and read in the same
-// request flow (verify, then the middleware answers), never across requests.
-let lastVerifyResult = null;
+// Per-request payment context. The facilitator's verify outcome for a paid
+// call lives here, not in a module-level variable, so two paid calls in
+// flight at once can never read each other's reason. The middleware runs
+// inside paymentContext.run() below, and verify() writes into that store.
+const paymentContext = new AsyncLocalStorage();
 const loggedFacilitator = {
   getSupported: (...args) => baseFacilitator.getSupported(...args),
   async verify(payload, requirements) {
     if (config.debug) console.log("[DEBUG] Decoded PAYMENT-SIGNATURE payload:", JSON.stringify(payload, null, 2));
     try {
       const response = await baseFacilitator.verify(payload, requirements);
-      lastVerifyResult = response;
+      const store = paymentContext.getStore();
+      if (store) store.verifyResult = response;
       if (config.debug) console.log("[DEBUG] Full /v2/verify response:", JSON.stringify(response, null, 2));
       return response;
     } catch (error) {
@@ -125,11 +129,13 @@ export function requirePayment(kind, base = "") {
       const encoded = Buffer.from(JSON.stringify(terms)).toString("base64");
       res.setHeader("payment-required", encoded);
       res.setHeader("x-payment-required", encoded);
-      return res.status(402).json({
-        ...terms,
-        error: `Payment required: this ${kind} check costs ${PRICES[kind]} cents in pieUSD on Kite testnet (${config.payments.network}). Pay with x402 and resend with a PAYMENT-SIGNATURE header, or read the free terms at GET ${base}/verdict/${kind}/terms.`,
-        code: "PAYMENT_REQUIRED",
-      });
+      return res.status(402).json(paymentRequiredBody({
+        kind,
+        cents: PRICES[kind],
+        network: config.payments.network,
+        base,
+        terms,
+      }));
     }
     const continueAfterPayment = (error) => {
       if (error) return next(error);
@@ -147,22 +153,20 @@ export function requirePayment(kind, base = "") {
       next();
     };
     // The library answers a failed verification with an empty {} body.
-    // Swap that one case for a helpful error in the standard envelope,
-    // using the facilitator's reason when one was captured. Successful
-    // payments and any non-empty body pass through untouched.
+    // Swap that one case for the payment table's error body, using this
+    // request's own facilitator outcome from the payment context.
+    // Successful payments and any non-empty body pass through untouched.
     const originalJson = res.json.bind(res);
     res.json = (body) => {
       if (res.statusCode === 402 && body && typeof body === "object" && Object.keys(body).length === 0) {
-        const reason = lastVerifyResult?.invalidReason || lastVerifyResult?.error || null;
-        const detail = reason ? ` The facilitator said: ${reason}.` : "";
-        return originalJson({
-          error: `Payment verification failed.${detail} Check your pieUSD balance on Kite testnet and that the payment matches the terms, then try again.`,
-          code: "PAYMENT_FAILED",
-          ...(reason ? { reason } : {}),
-        });
+        const verifyResult = paymentContext.getStore()?.verifyResult ?? null;
+        return originalJson(paymentFailedBody({ verifyResult }));
       }
       return originalJson(body);
     };
-    Promise.resolve(middleware(req, res, continueAfterPayment)).catch(next);
+    // Run the library middleware inside this request's payment context, so
+    // verify() and the 402 body above always see the same request's outcome.
+    return paymentContext.run({ verifyResult: null }, () =>
+      Promise.resolve(middleware(req, res, continueAfterPayment)).catch(next));
   };
 }

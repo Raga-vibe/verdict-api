@@ -1,3 +1,5 @@
+import { WIDGET_STATES, DASHBOARD_STATES } from "./states.js";
+
 // Judge-facing pages: landing (/) and dashboard (/dashboard).
 // No frameworks, no new dependencies. All numbers on the landing page are
 // rendered from the live server config, never hardcoded. Dashboard numbers
@@ -302,12 +304,17 @@ function row(k, v, sub) {
   r.appendChild(kk); r.appendChild(vv);
   return r;
 }
+var loadToken = 0;
 function load(kind) {
+  // A slow reply for a tab the visitor already left must not overwrite the
+  // tab they are looking at now.
+  var myToken = ++loadToken;
   btns.forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-kind") === kind); });
   curlPre.textContent = 'curl -X POST https://verdict-api-t50q.onrender.com/v1/verdict/' + kind + ' -H "Content-Type: application/json" -d \\'' + JSON.stringify(curlBodies[kind]) + "'\\n# First reply: 402 with the terms above. Pay, resend with PAYMENT-SIGNATURE, get the verdict.";
   box.replaceChildren(row("Terms", "Loading..."));
   full.textContent = "Loading...";
   fetch("/v1/verdict/" + kind + "/terms").then(function (r) { return r.json(); }).then(function (j) {
+    if (myToken !== loadToken) return;
     var a = (j.accepts && j.accepts[0]) || {};
     var cents = a.amount ? (Number(a.amount) / 1e16).toFixed(0) : "?";
     var fields = j.outputSchema && j.outputSchema.input && j.outputSchema.input.bodyFields
@@ -323,6 +330,7 @@ function load(kind) {
     );
     full.textContent = JSON.stringify(j, null, 2);
   }).catch(function () {
+    if (myToken !== loadToken) return;
     box.replaceChildren(row("Terms", "Could not load. Is the API awake?"));
     full.textContent = "Could not load payment terms.";
   });
@@ -330,6 +338,7 @@ function load(kind) {
 btns.forEach(function (b) { b.addEventListener("click", function () { load(b.getAttribute("data-kind")); }); });
 load("link");
 </script>
+<script>var WT_STATES = ${JSON.stringify(WIDGET_STATES)};</script>
 <script>
 (function () {
   var statusEl = document.getElementById("wt-status");
@@ -346,6 +355,11 @@ load("link");
   var account = null;
   var terms = null;
   var busy = false;
+  // The widget's one state variable. Every status line the visitor sees
+  // comes from WIDGET_STATES (src/states.js, embedded above as WT_STATES);
+  // the current state is also on the card as data-wt-state for debugging.
+  var wtState = "detecting";
+  var cardEl = document.getElementById("wt-card");
   var CHAIN_ID = 2368;
   var CHAIN_HEX = "0x940";
   var NETWORK = "eip155:2368";
@@ -385,7 +399,20 @@ load("link");
     return whole.toString() + "." + f.slice(0, 4);
   }
   function centsOf(u) { return (Number(BigInt(u)) / 1e16).toFixed(0); }
-  function setStatus(text) { statusEl.textContent = text; }
+  // Fill a {placeholder} template. Split/join on purpose, not a regex:
+  // backslashes do not survive this file's template literal (the same
+  // trap that once broke the try-it widget), so no regex lives here.
+  function fmtState(template, ctx) {
+    var out = String(template);
+    if (ctx) for (var key in ctx) out = out.split("{" + key + "}").join(ctx[key] == null ? "" : ctx[key]);
+    return out;
+  }
+  function setWtState(name, ctx) {
+    wtState = name;
+    if (cardEl) cardEl.setAttribute("data-wt-state", name);
+    var entry = (typeof WT_STATES !== "undefined" && WT_STATES[name]) || null;
+    statusEl.textContent = entry ? fmtState(entry.message, ctx) : "";
+  }
   function showError(msg, linkLabel, linkHref) {
     errorEl.replaceChildren();
     errorEl.appendChild(document.createTextNode(msg));
@@ -456,8 +483,15 @@ load("link");
     var req = requirement();
     if (!req || !account) return;
     eth.request({ method: "eth_call", params: [{ to: req.asset, data: balanceCallData(account) }, "latest"] }).then(function (hex) {
-      balEl.textContent = fmtUnits(BigInt(hex || "0x0").toString()) + " pieUSD";
-      checkBtn.disabled = BigInt(hex || "0x0") < BigInt(req.amount);
+      var bal = BigInt(hex || "0x0");
+      balEl.textContent = fmtUnits(bal.toString()) + " pieUSD";
+      var tooLow = bal < BigInt(req.amount);
+      checkBtn.disabled = tooLow;
+      // The check button going dead with no message is how a visitor used
+      // to learn their balance had run out. Say so, but only while the
+      // widget is waiting for a check; a finished check keeps its status.
+      if (tooLow && (wtState === "ready" || wtState === "balance_low")) setWtState("balance_low", { cents: centsOf(req.amount) });
+      if (!tooLow && wtState === "balance_low") setWtState("ready", { cents: centsOf(req.amount), address: shortAddr(account) });
     }).catch(function () {});
   }
   function refreshBalance() {
@@ -470,12 +504,12 @@ load("link");
       actionsEl.replaceChildren();
       if (bal < amount) {
         checkBtn.disabled = true;
-        setStatus("Your pieUSD balance is too low for a " + centsOf(req.amount) + "c check. Get free testnet pieUSD from the faucet, then check your balance again.");
+        setWtState("balance_low", { cents: centsOf(req.amount) });
         addActionLink("Get testnet pieUSD", FAUCET);
         addActionButton("I have pieUSD, check again", false, function () { clearError(); refreshBalance(); });
         return false;
       }
-      setStatus("Ready. Checking costs " + centsOf(req.amount) + "c in pieUSD, paid from " + shortAddr(account) + ".");
+      setWtState("ready", { cents: centsOf(req.amount), address: shortAddr(account) });
       checkBtn.disabled = false;
       return true;
     }).catch(function (e) {
@@ -503,7 +537,7 @@ load("link");
   }
   function connect() {
     clearError();
-    setStatus("Waiting for your wallet...");
+    setWtState("connecting");
     return eth.request({ method: "eth_requestAccounts" }).then(function (accounts) {
       if (!accounts || !accounts.length) {
         showError("No account was shared by your wallet. Connect again and pick an account.");
@@ -516,7 +550,7 @@ load("link");
       if (isUserRejection(e)) showError("Connection cancelled in your wallet. Nothing was changed.");
       else if (e && e.code === -32002) showError("A wallet request is already open. Check your wallet app and approve or dismiss it, then try again.");
       else showError("Could not connect to your wallet: " + String((e && e.message) || e));
-      setStatus("Wallet not connected.");
+      setWtState("not_connected");
     });
   }
   function txFromHeader(res) {
@@ -593,7 +627,7 @@ load("link");
     checkBtn.disabled = true;
     clearError();
     resultEl.replaceChildren();
-    setStatus("Asking Verdict for the payment terms...");
+    setWtState("asking_terms");
     var body = JSON.stringify({ url: url });
     fetch("/v1/verdict/link", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: body }).then(function (probe) {
       if (probe.ok) return probe.json().then(function (d) { return { done: true, data: d, res: probe }; });
@@ -611,7 +645,7 @@ load("link");
     }).then(function (step) {
       if (!step) return null;
       if (step.done) {
-        setStatus("Done. No payment was needed for this call.");
+        setWtState("done_free");
         renderVerdict(step.data, url, txFromHeader(step.res));
         return null;
       }
@@ -629,7 +663,7 @@ load("link");
       var validBefore = now + Number(req2.maxTimeoutSeconds || 60);
       var nonce = randomNonce();
       var extra = req2.extra || {};
-      setStatus("Payment: " + fmtUnits(req2.amount) + " pieUSD (" + centsOf(req2.amount) + "c). Approve the signature in your wallet...");
+      setWtState("awaiting_signature", { amount: fmtUnits(req2.amount), cents: centsOf(req2.amount) });
       var typed = {
         domain: { name: extra.name || "pieUSD", version: extra.version || "1", chainId: CHAIN_ID, verifyingContract: req2.asset },
         message: { from: account, to: req2.payTo, value: String(req2.amount), validAfter: "0", validBefore: String(validBefore), nonce: nonce },
@@ -658,7 +692,7 @@ load("link");
           resource: challenge.resource,
           accepted: req2
         };
-        setStatus("Signature approved. Sending the paid check...");
+        setWtState("sending");
         return fetch("/v1/verdict/link", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", "PAYMENT-SIGNATURE": b64encode(JSON.stringify(payload)) }, body: body });
       }).then(function (paid) {
         if (paid.ok) return paid.json().then(function (d) { return { data: d, res: paid }; });
@@ -670,13 +704,13 @@ load("link");
         });
       }).then(function (out) {
         if (!out) return;
-        setStatus("Done. Verdict paid and settled on Kite testnet.");
+        setWtState("done_paid");
         renderVerdict(out.data, url, txFromHeader(out.res));
       });
     }).catch(function (e) {
       if (isUserRejection(e)) showError("Signature cancelled in your wallet. No payment was made, nothing was charged.");
       else showError(String((e && e.message) || e));
-      setStatus("Check did not complete. Your wallet was not charged unless a verdict is shown below.");
+      setWtState("incomplete");
     }).then(function () {
       busy = false;
       quietBalance();
@@ -693,24 +727,24 @@ load("link");
   checkBtn.addEventListener("click", doCheck);
   if (eth && eth.on) {
     eth.on("accountsChanged", function (accs) {
-      if (!accs || !accs.length) { account = null; walletEl.hidden = true; actionsEl.replaceChildren(); setStatus("Wallet disconnected. Connect again to try a check."); addActionButton("Connect wallet", true, connect); return; }
+      if (!accs || !accs.length) { account = null; walletEl.hidden = true; actionsEl.replaceChildren(); setWtState("wallet_disconnected"); addActionButton("Connect wallet", true, connect); return; }
       account = accs[0];
       syncWallet();
     });
     eth.on("chainChanged", function () { if (account) syncWallet(); });
   }
   if (!eth) {
-    setStatus("No wallet found in this browser. Install MetaMask, or open this page inside your wallet app\u2019s browser (for example MetaMask on your phone). The check below stays off until a wallet is present.");
+    setWtState("no_wallet");
     return;
   }
-  setStatus("Loading the payment terms...");
+  setWtState("terms_loading");
   fetch("/v1/verdict/link/terms").then(function (r) { return r.json(); }).then(function (j) {
     terms = j;
     if (!requirement()) throw new Error("no terms");
-    setStatus("Wallet found. Connect it to check a link for " + centsOf(requirement().amount) + "c in testnet pieUSD.");
+    setWtState("wallet_found", { cents: centsOf(requirement().amount) });
     addActionButton("Connect wallet", true, connect);
   }).catch(function () {
-    setStatus("Could not load the payment terms. Is the API awake? Reload the page to try again.");
+    setWtState("terms_failed");
   });
 })();
 </script>`;
@@ -756,11 +790,31 @@ export function dashboardPage() {
 </section>
 </main>
 <footer><div class="wrap">Verdict API &middot; <a href="/">Back to the API</a> &middot; <a href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">Source on GitHub</a></div></footer>
+<script>var DASH_STATES = ${JSON.stringify(DASHBOARD_STATES)};</script>
 <script>
 var recentData = [];
 var currentFilter = "all";
 var paused = false;
 var timer = null;
+// The dashboard's refresh state. A refresh already in flight is never
+// started twice, so a slow reply cannot overwrite newer data; a failed
+// refresh keeps the last good board and only changes the note line.
+var dashState = "loading";
+var inFlight = false;
+var lastGoodAt = null;
+function fmtDash(template, ctx) {
+  // Split/join, not a regex: backslashes do not survive this file's
+  // template literal, so no regex lives in these page scripts.
+  var out = String(template);
+  if (ctx) for (var key in ctx) out = out.split("{" + key + "}").join(ctx[key] == null ? "" : ctx[key]);
+  return out;
+}
+function setDashState(name, ctx) {
+  dashState = name;
+  document.body.setAttribute("data-dash-state", name);
+  var entry = (typeof DASH_STATES !== "undefined" && DASH_STATES[name]) || null;
+  if (entry) document.getElementById("updated").textContent = fmtDash(entry.note, ctx);
+}
 function el(tag, text, cls) {
   var n = document.createElement(tag);
   if (text !== undefined && text !== null) n.textContent = text;
@@ -865,7 +919,11 @@ function renderRecent() {
   wrap.appendChild(list);
 }
 function refresh() {
+  if (inFlight) return;
+  inFlight = true;
   fetch("/stats").then(function (r) { return r.json(); }).then(function (s) {
+    inFlight = false;
+    lastGoodAt = new Date();
     var paid = s.paid_calls || 0;
     document.getElementById("kpi-calls").textContent = s.calls;
     document.getElementById("kpi-calls-sub").textContent = paid + " paid, " + (s.calls - paid) + " free";
@@ -878,12 +936,20 @@ function refresh() {
     document.getElementById("kpi-scam-sub").textContent = (bv.risky || 0) + " risky flagged";
     bars(document.getElementById("by-kind"), s.by_kind || {}, { claim: "#f59e0b", link: "#60a5fa", token: "#22c55e" });
     bars(document.getElementById("by-verdict"), bv, { safe: "#22c55e", "true": "#22c55e", risky: "#fbbf24", scam: "#ef4444", "false": "#ef4444", unclear: "#94a3b8" });
-    document.getElementById("updated").textContent = "Updated " + new Date().toLocaleTimeString();
+    setDashState("live", { time: lastGoodAt.toLocaleTimeString() });
     recentData = s.recent || [];
     renderRecent();
   }).catch(function () {
-    var wrap = document.getElementById("recent-wrap");
-    wrap.replaceChildren(el("div", "Could not load stats. Is the API awake?", "empty"));
+    inFlight = false;
+    // Keep the last good board on screen; only the note line changes, so
+    // a transient blip never wipes the data the visitor is reading.
+    if (!lastGoodAt) {
+      dashState = "error";
+      document.body.setAttribute("data-dash-state", "error");
+      document.getElementById("updated").textContent = "Couldn't load stats. Is the API awake?";
+      return;
+    }
+    setDashState("error", { time: lastGoodAt.toLocaleTimeString() });
   });
 }
 document.querySelectorAll(".chip").forEach(function (b) {
@@ -898,9 +964,13 @@ pauseBtn.addEventListener("click", function () {
   paused = !paused;
   pauseBtn.setAttribute("aria-pressed", String(paused));
   pauseBtn.textContent = paused ? "Resume updates" : "Pause updates";
-  if (paused) { clearInterval(timer); timer = null; }
+  if (paused) {
+    clearInterval(timer); timer = null;
+    setDashState("paused", { time: (lastGoodAt || new Date()).toLocaleTimeString() });
+  }
   else { refresh(); timer = setInterval(refresh, 3000); }
 });
+setDashState("loading", {});
 refresh();
 timer = setInterval(refresh, 3000);
 </script>`;
