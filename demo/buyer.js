@@ -127,24 +127,21 @@ async function checkPage(pageUrl, label) {
     primaryType: "TransferWithAuthorization",
     message: { from: buyer.address, to: requirement.payTo, value: amount, validAfter: 0n, validBefore, nonce },
   });
-  const signatureHex = signature.slice(2);
-  let v = Number.parseInt(signatureHex.slice(128, 130), 16);
-  if (v < 27) v += 27;
   const payload = {
     x402Version: 2,
-    scheme: "exact",
-    network: TESTNET,
-    authorization: {
-      from: buyer.address,
-      to: requirement.payTo,
-      value: amount.toString(),
-      validAfter: 0,
-      validBefore: Number(validBefore),
-      nonce,
-      v,
-      r: `0x${signatureHex.slice(0, 64)}`,
-      s: `0x${signatureHex.slice(64, 128)}`,
+    payload: {
+      authorization: {
+        from: buyer.address,
+        to: requirement.payTo,
+        value: amount.toString(),
+        validAfter: "0",
+        validBefore: String(validBefore),
+        nonce,
+      },
+      signature,
     },
+    resource: challenge.resource,
+    accepted: requirement,
   };
   const paid = await fetch(URL, {
     method: "POST",

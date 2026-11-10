@@ -135,7 +135,27 @@ th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06
 .empty h3{color:#fff;font-size:16px;margin:0 0 6px}
 .empty p{margin:0 0 14px}
 .empty .steps{text-align:left;max-width:420px;margin:0 auto}
-.empty .steps li{margin:6px 0}`;
+.empty .steps li{margin:6px 0}
+.wt-status{font-size:14px;color:var(--muted);margin:0 0 14px}
+.wt-status b{color:#fff}
+.wt-row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.wt-row .btn{flex:1 1 auto;text-align:center}
+button.btn{font-family:inherit;cursor:pointer}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+.wt-input{width:100%;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:#020617;color:var(--text);font-size:16px;font-family:var(--font-mono)}
+.wt-input:focus{border-color:var(--accent);outline:none}
+.wt-presets{display:flex;gap:8px;flex-wrap:wrap}
+.wt-label{display:block;font-size:14px;color:var(--muted);margin:14px 0 6px}
+.wt-note{font-size:13px;color:var(--muted);margin:12px 0 0}
+.wt-error{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);color:#fca5a5;border-radius:10px;padding:12px 14px;font-size:14px;margin-top:14px}
+.wt-error a{color:#fecaca}
+.wt-ok{color:var(--green);font-weight:700}
+.wt-result{margin-top:16px}
+.wt-result ul{margin:8px 0 0;padding-left:20px;color:var(--muted);font-size:14px}
+.wt-result li{margin:6px 0}
+.wt-result li b{color:#fff;font-weight:600}
+.wt-result blockquote{margin:4px 0 0;padding:6px 10px;border-left:3px solid var(--line);color:var(--muted);font-size:13px}
+@media(max-width:640px){.wt-row .btn{flex:1 1 100%}}`;
 
 function shell({ title, body }) {
   return `<!doctype html>
@@ -230,6 +250,33 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 </section>
 
 <section>
+<h2>Try it for real, from this page</h2>
+<p class="sub">No terminal, no PC needed. Connect a wallet on Kite testnet, pay 3&cent; in testnet pieUSD, and get a real verdict for a link.</p>
+<div class="card" id="wt-card">
+<p class="wt-status" id="wt-status">Checking for a wallet...</p>
+<div class="wt-row" id="wt-actions"></div>
+<div id="wt-wallet" hidden>
+<div class="kv" style="margin-bottom:12px">
+<div class="row"><div class="k">Wallet</div><div class="v" id="wt-addr">-</div></div>
+<div class="row"><div class="k">Network</div><div class="v" id="wt-net">-</div></div>
+<div class="row"><div class="k">pieUSD</div><div class="v" id="wt-bal">-</div></div>
+</div>
+<div class="wt-presets" role="group" aria-label="Sample pages">
+<button type="button" class="chip" data-preset="scam">Scam sample</button>
+<button type="button" class="chip" data-preset="honest">Honest sample</button>
+</div>
+<label class="wt-label" for="wt-url">Page to check</label>
+<input class="wt-input" id="wt-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" value="https://raw.githubusercontent.com/Raga-vibe/verdict-api/master/tests/fixtures/scam-1.html">
+<div class="wt-row"><button type="button" class="btn primary" id="wt-check" disabled>Check this link &middot; 3&cent;</button></div>
+<p class="wt-note">You sign one payment of 3&cent; in your wallet. Nothing is charged until you approve the signature in your wallet. Testnet only, so the pieUSD is free from the faucet.</p>
+</div>
+<div id="wt-error" class="wt-error" hidden></div>
+<div id="wt-result" class="wt-result"></div>
+</div>
+<p class="sub" style="margin-top:14px">Need testnet pieUSD? Get free KITE and pieUSD at the <a href="https://faucet.gokite.ai" target="_blank" rel="noreferrer">Kite testnet faucet</a>. No wallet yet? Install <a href="https://metamask.io/download/" target="_blank" rel="noreferrer">MetaMask</a>, or open this page inside your wallet app&rsquo;s browser.</p>
+</section>
+
+<section>
 <h2>Built for agents, documented for humans</h2>
 <p class="sub">Version 1 lives under /v1/. The unversioned paths still work. Errors always come back as an error message plus a stable code, like VALIDATION_ERROR or NOT_FOUND.</p>
 <div class="btns"><a class="btn" href="/openapi.json">OpenAPI spec</a><a class="btn" href="/health">Health check</a><a class="btn" href="/stats">Stats as JSON</a><a class="btn" href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">README</a></div>
@@ -282,6 +329,390 @@ function load(kind) {
 }
 btns.forEach(function (b) { b.addEventListener("click", function () { load(b.getAttribute("data-kind")); }); });
 load("link");
+</script>
+<script>
+(function () {
+  var statusEl = document.getElementById("wt-status");
+  var actionsEl = document.getElementById("wt-actions");
+  var walletEl = document.getElementById("wt-wallet");
+  var addrEl = document.getElementById("wt-addr");
+  var netEl = document.getElementById("wt-net");
+  var balEl = document.getElementById("wt-bal");
+  var urlEl = document.getElementById("wt-url");
+  var checkBtn = document.getElementById("wt-check");
+  var errorEl = document.getElementById("wt-error");
+  var resultEl = document.getElementById("wt-result");
+  var eth = (typeof window !== "undefined" && window.ethereum) ? window.ethereum : null;
+  var account = null;
+  var terms = null;
+  var busy = false;
+  var CHAIN_ID = 2368;
+  var CHAIN_HEX = "0x940";
+  var NETWORK = "eip155:2368";
+  var RPC_URL = "https://rpc-testnet.gokite.ai/";
+  var EXPLORER = "https://testnet.kitescan.ai/";
+  var FAUCET = "https://faucet.gokite.ai";
+  var PRESETS = {
+    scam: "https://raw.githubusercontent.com/Raga-vibe/verdict-api/master/tests/fixtures/scam-1.html",
+    honest: "https://raw.githubusercontent.com/Raga-vibe/verdict-api/master/tests/fixtures/honest-1.html"
+  };
+  var MAX_UNITS_PER_CALL = 50000000000000000n;
+  function el(tag, text, cls) {
+    var n = document.createElement(tag);
+    if (text !== undefined && text !== null) n.textContent = text;
+    if (cls) n.className = cls;
+    return n;
+  }
+  function shortAddr(a) { return a ? a.slice(0, 6) + "..." + a.slice(-4) : "-"; }
+  function b64encode(s) {
+    var bytes = new TextEncoder().encode(s);
+    var bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function b64decode(s) {
+    var bin = atob(s);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function fmtUnits(u) {
+    var n = BigInt(u);
+    var whole = n / 1000000000000000000n;
+    var frac = n % 1000000000000000000n;
+    var f = frac.toString();
+    while (f.length < 18) f = "0" + f;
+    return whole.toString() + "." + f.slice(0, 4);
+  }
+  function centsOf(u) { return (Number(BigInt(u)) / 1e16).toFixed(0); }
+  function setStatus(text) { statusEl.textContent = text; }
+  function showError(msg, linkLabel, linkHref) {
+    errorEl.replaceChildren();
+    errorEl.appendChild(document.createTextNode(msg));
+    if (linkLabel && linkHref) {
+      errorEl.appendChild(document.createTextNode(" "));
+      var a = document.createElement("a");
+      a.href = linkHref; a.target = "_blank"; a.rel = "noreferrer"; a.textContent = linkLabel;
+      errorEl.appendChild(a);
+    }
+    errorEl.hidden = false;
+  }
+  function clearError() { errorEl.replaceChildren(); errorEl.hidden = true; }
+  function isUserRejection(e) {
+    return !!e && (e.code === 4001 || /user rejected|user denied/i.test(String((e && e.message) || "")));
+  }
+  function randomNonce() {
+    if (!window.crypto || !window.crypto.getRandomValues) throw new Error("This browser cannot make a secure random nonce.");
+    var b = new Uint8Array(32);
+    window.crypto.getRandomValues(b);
+    var hex = "";
+    for (var i = 0; i < b.length; i++) hex += ("0" + b[i].toString(16)).slice(-2);
+    return "0x" + hex;
+  }
+  function balanceCallData(addr) {
+    var a = addr.slice(2).toLowerCase();
+    while (a.length < 64) a = "0" + a;
+    return "0x70a08231" + a;
+  }
+  function requirement() {
+    if (!terms || !terms.accepts || !terms.accepts[0]) return null;
+    return terms.accepts[0];
+  }
+  function addActionButton(label, primary, onClick) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn" + (primary ? " primary" : "");
+    b.textContent = label;
+    b.addEventListener("click", onClick);
+    actionsEl.appendChild(b);
+    return b;
+  }
+  function addActionLink(label, href) {
+    var a = document.createElement("a");
+    a.className = "btn";
+    a.href = href; a.target = "_blank"; a.rel = "noreferrer";
+    a.textContent = label;
+    actionsEl.appendChild(a);
+    return a;
+  }
+  function ensureChain() {
+    return eth.request({ method: "eth_chainId" }).then(function (id) {
+      if (String(id).toLowerCase() === CHAIN_HEX) return true;
+      return eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] }).then(function () { return true; }).catch(function (e) {
+        if (e && e.code === 4902) {
+          return eth.request({ method: "wallet_addEthereumChain", params: [{ chainId: CHAIN_HEX, chainName: "KiteAI Testnet", nativeCurrency: { name: "KITE", symbol: "KITE", decimals: 18 }, rpcUrls: [RPC_URL], blockExplorerUrls: [EXPLORER] }] }).then(function () { return true; }).catch(function (e2) {
+            if (isUserRejection(e2)) showError("Adding Kite testnet was cancelled in your wallet. Nothing was changed.");
+            else showError("Could not add Kite testnet to your wallet: " + String((e2 && e2.message) || e2));
+            return false;
+          });
+        }
+        if (isUserRejection(e)) showError("Switching to Kite testnet was cancelled in your wallet. Nothing was changed.");
+        else showError("Could not switch to Kite testnet: " + String((e && e.message) || e));
+        return false;
+      });
+    });
+  }
+  function quietBalance() {
+    var req = requirement();
+    if (!req || !account) return;
+    eth.request({ method: "eth_call", params: [{ to: req.asset, data: balanceCallData(account) }, "latest"] }).then(function (hex) {
+      balEl.textContent = fmtUnits(BigInt(hex || "0x0").toString()) + " pieUSD";
+      checkBtn.disabled = BigInt(hex || "0x0") < BigInt(req.amount);
+    }).catch(function () {});
+  }
+  function refreshBalance() {
+    var req = requirement();
+    if (!req || !account) return Promise.resolve(false);
+    return eth.request({ method: "eth_call", params: [{ to: req.asset, data: balanceCallData(account) }, "latest"] }).then(function (hex) {
+      var bal = BigInt(hex || "0x0");
+      var amount = BigInt(req.amount);
+      balEl.textContent = fmtUnits(bal.toString()) + " pieUSD";
+      actionsEl.replaceChildren();
+      if (bal < amount) {
+        checkBtn.disabled = true;
+        setStatus("Your pieUSD balance is too low for a " + centsOf(req.amount) + "c check. Get free testnet pieUSD from the faucet, then check your balance again.");
+        addActionLink("Get testnet pieUSD", FAUCET);
+        addActionButton("I have pieUSD, check again", false, function () { clearError(); refreshBalance(); });
+        return false;
+      }
+      setStatus("Ready. Checking costs " + centsOf(req.amount) + "c in pieUSD, paid from " + shortAddr(account) + ".");
+      checkBtn.disabled = false;
+      return true;
+    }).catch(function (e) {
+      balEl.textContent = "Could not read balance";
+      checkBtn.disabled = true;
+      actionsEl.replaceChildren();
+      addActionButton("Retry balance check", false, function () { clearError(); refreshBalance(); });
+      showError("Could not read your pieUSD balance: " + String((e && e.message) || e));
+      return false;
+    });
+  }
+  function syncWallet() {
+    clearError();
+    return ensureChain().then(function (ok) {
+      if (!ok) {
+        actionsEl.replaceChildren();
+        addActionButton("Switch to Kite testnet", true, function () { clearError(); syncWallet(); });
+        return;
+      }
+      walletEl.hidden = false;
+      addrEl.textContent = shortAddr(account);
+      netEl.textContent = "Kite testnet (2368)";
+      return refreshBalance();
+    });
+  }
+  function connect() {
+    clearError();
+    setStatus("Waiting for your wallet...");
+    return eth.request({ method: "eth_requestAccounts" }).then(function (accounts) {
+      if (!accounts || !accounts.length) {
+        showError("No account was shared by your wallet. Connect again and pick an account.");
+        return;
+      }
+      account = accounts[0];
+      actionsEl.replaceChildren();
+      return syncWallet();
+    }).catch(function (e) {
+      if (isUserRejection(e)) showError("Connection cancelled in your wallet. Nothing was changed.");
+      else if (e && e.code === -32002) showError("A wallet request is already open. Check your wallet app and approve or dismiss it, then try again.");
+      else showError("Could not connect to your wallet: " + String((e && e.message) || e));
+      setStatus("Wallet not connected.");
+    });
+  }
+  function txFromHeader(res) {
+    var h = res.headers.get("payment-response") || res.headers.get("x-payment-response");
+    if (!h) return null;
+    try {
+      var s = JSON.parse(b64decode(h));
+      return s.transaction || s.transactionHash || s.txHash || null;
+    } catch (e) { return null; }
+  }
+  function renderVerdict(d, url, tx) {
+    resultEl.replaceChildren();
+    var card = el("div", null, "vcard");
+    var top = el("div", null, "vcard-top");
+    top.appendChild(el("span", url.length > 90 ? url.slice(0, 89) + "..." : url, "subject"));
+    top.appendChild(el("span", d.verdict, "badge " + String(d.verdict).toLowerCase()));
+    if (d.injection_detected) top.appendChild(el("span", "Injection flagged", "flag"));
+    card.appendChild(top);
+    if (d.summary) card.appendChild(el("p", d.summary, "vsummary"));
+    var pct = Math.round(Number(d.confidence || 0) * 100);
+    var conf = el("div", null, "conf");
+    conf.appendChild(el("span", "Confidence " + pct + "%"));
+    var bar = el("span", null, "bar");
+    var fill = document.createElement("i");
+    fill.style.width = Math.max(4, pct) + "%";
+    var v = String(d.verdict).toLowerCase();
+    fill.style.background = v === "scam" || v === "false" ? "#ef4444" : v === "risky" ? "#fbbf24" : v === "unclear" ? "#94a3b8" : "#22c55e";
+    bar.appendChild(fill);
+    conf.appendChild(bar);
+    card.appendChild(conf);
+    if (d.reasons && d.reasons.length) {
+      var list = document.createElement("ul");
+      d.reasons.forEach(function (r) {
+        var li = document.createElement("li");
+        li.appendChild(el("b", r.point || "Reason"));
+        if (r.quote) {
+          var q = document.createElement("blockquote");
+          q.textContent = r.quote;
+          li.appendChild(q);
+        }
+        list.appendChild(li);
+      });
+      card.appendChild(list);
+    }
+    var meta = el("div", null, "vmeta");
+    meta.appendChild(el("span", "Link check, 3c paid"));
+    if (d.model) meta.appendChild(el("span", "Model " + d.model));
+    if (d.receipt) meta.appendChild(el("span", "Receipt " + String(d.receipt).slice(0, 12) + "..."));
+    if (tx) {
+      var txa = document.createElement("a");
+      txa.href = EXPLORER + "tx/" + tx;
+      txa.textContent = "View payment tx " + tx.slice(0, 10) + "...";
+      txa.target = "_blank"; txa.rel = "noreferrer";
+      meta.appendChild(txa);
+    }
+    var dash = document.createElement("a");
+    dash.href = "/dashboard"; dash.textContent = "See it on the dashboard";
+    meta.appendChild(dash);
+    card.appendChild(meta);
+    resultEl.appendChild(card);
+  }
+  function doCheck() {
+    if (busy) return;
+    if (!account) { showError("Connect your wallet first, using the button above."); return; }
+    var url = urlEl.value.trim();
+    var lowerUrl = url.toLowerCase();
+    if (lowerUrl.indexOf("http://") !== 0 && lowerUrl.indexOf("https://") !== 0) {
+      showError("Enter a page URL starting with http:// or https://, or tap one of the sample pages above.");
+      return;
+    }
+    var req = requirement();
+    if (!req) { showError("Payment terms are not loaded yet. Reload the page and try again."); return; }
+    busy = true;
+    checkBtn.disabled = true;
+    clearError();
+    resultEl.replaceChildren();
+    setStatus("Asking Verdict for the payment terms...");
+    var body = JSON.stringify({ url: url });
+    fetch("/v1/verdict/link", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: body }).then(function (probe) {
+      if (probe.ok) return probe.json().then(function (d) { return { done: true, data: d, res: probe }; });
+      if (probe.status !== 402) return probe.text().then(function (t) { throw new Error("Verdict call failed: HTTP " + probe.status + " " + t.slice(0, 200)); });
+      return probe.text().then(function (text) {
+        var challenge = null;
+        try { challenge = JSON.parse(text); } catch (e) { challenge = null; }
+        if (!challenge || !challenge.accepts) {
+          var h = probe.headers.get("payment-required") || probe.headers.get("x-payment-required");
+          if (h) { try { challenge = JSON.parse(b64decode(h)); } catch (e2) { challenge = null; } }
+        }
+        if (!challenge || challenge.x402Version !== 2 || !challenge.accepts) throw new Error("The server answered 402 but without usable payment terms. Try again in a moment.");
+        return { done: false, challenge: challenge };
+      });
+    }).then(function (step) {
+      if (!step) return null;
+      if (step.done) {
+        setStatus("Done. No payment was needed for this call.");
+        renderVerdict(step.data, url, txFromHeader(step.res));
+        return null;
+      }
+      var challenge = step.challenge;
+      var req2 = null;
+      for (var i = 0; i < challenge.accepts.length; i++) {
+        var a = challenge.accepts[i];
+        if (a.scheme === "exact" && a.network === NETWORK) { req2 = a; break; }
+      }
+      if (!req2) throw new Error("The server did not offer an exact pieUSD payment on Kite testnet. Nothing was signed.");
+      if (String(req2.asset).toLowerCase() !== String(req.asset).toLowerCase()) throw new Error("The server asked to be paid in an unexpected token. Nothing was signed.");
+      var amount = BigInt(req2.amount);
+      if (amount <= 0n || amount > MAX_UNITS_PER_CALL) throw new Error("Refusing to sign: this check costs more than 5c. Nothing was signed.");
+      var now = Math.floor(Date.now() / 1000);
+      var validBefore = now + Number(req2.maxTimeoutSeconds || 60);
+      var nonce = randomNonce();
+      var extra = req2.extra || {};
+      setStatus("Payment: " + fmtUnits(req2.amount) + " pieUSD (" + centsOf(req2.amount) + "c). Approve the signature in your wallet...");
+      var typed = {
+        domain: { name: extra.name || "pieUSD", version: extra.version || "1", chainId: CHAIN_ID, verifyingContract: req2.asset },
+        message: { from: account, to: req2.payTo, value: String(req2.amount), validAfter: "0", validBefore: String(validBefore), nonce: nonce },
+        primaryType: "TransferWithAuthorization",
+        types: {
+          EIP712Domain: [
+            { name: "name", type: "string" },
+            { name: "version", type: "string" },
+            { name: "chainId", type: "uint256" },
+            { name: "verifyingContract", type: "address" }
+          ],
+          TransferWithAuthorization: [
+            { name: "from", type: "address" },
+            { name: "to", type: "address" },
+            { name: "value", type: "uint256" },
+            { name: "validAfter", type: "uint256" },
+            { name: "validBefore", type: "uint256" },
+            { name: "nonce", type: "bytes32" }
+          ]
+        }
+      };
+      return eth.request({ method: "eth_signTypedData_v4", params: [account, JSON.stringify(typed)] }).then(function (sig) {
+        var payload = {
+          x402Version: 2,
+          payload: { authorization: { from: account, to: req2.payTo, value: String(req2.amount), validAfter: "0", validBefore: String(validBefore), nonce: nonce }, signature: sig },
+          resource: challenge.resource,
+          accepted: req2
+        };
+        setStatus("Signature approved. Sending the paid check...");
+        return fetch("/v1/verdict/link", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", "PAYMENT-SIGNATURE": b64encode(JSON.stringify(payload)) }, body: body });
+      }).then(function (paid) {
+        if (paid.ok) return paid.json().then(function (d) { return { data: d, res: paid }; });
+        return paid.text().then(function (t) {
+          var msg = t;
+          try { var j = JSON.parse(t); msg = j.error || j.code || t; } catch (e) { msg = t; }
+          if (paid.status === 402) throw new Error("The payment was rejected: " + String(msg).slice(0, 300) + " Your wallet was not charged. Check your pieUSD balance and try again.");
+          throw new Error("Paid request failed: HTTP " + paid.status + " " + String(msg).slice(0, 300));
+        });
+      }).then(function (out) {
+        if (!out) return;
+        setStatus("Done. Verdict paid and settled on Kite testnet.");
+        renderVerdict(out.data, url, txFromHeader(out.res));
+      });
+    }).catch(function (e) {
+      if (isUserRejection(e)) showError("Signature cancelled in your wallet. No payment was made, nothing was charged.");
+      else showError(String((e && e.message) || e));
+      setStatus("Check did not complete. Your wallet was not charged unless a verdict is shown below.");
+    }).then(function () {
+      busy = false;
+      quietBalance();
+    });
+  }
+  document.querySelectorAll("#wt-card [data-preset]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      urlEl.value = PRESETS[b.getAttribute("data-preset")] || "";
+      clearError();
+      resultEl.replaceChildren();
+      urlEl.focus();
+    });
+  });
+  checkBtn.addEventListener("click", doCheck);
+  if (eth && eth.on) {
+    eth.on("accountsChanged", function (accs) {
+      if (!accs || !accs.length) { account = null; walletEl.hidden = true; actionsEl.replaceChildren(); setStatus("Wallet disconnected. Connect again to try a check."); addActionButton("Connect wallet", true, connect); return; }
+      account = accs[0];
+      syncWallet();
+    });
+    eth.on("chainChanged", function () { if (account) syncWallet(); });
+  }
+  if (!eth) {
+    setStatus("No wallet found in this browser. Install MetaMask, or open this page inside your wallet app\u2019s browser (for example MetaMask on your phone). The check below stays off until a wallet is present.");
+    return;
+  }
+  setStatus("Loading the payment terms...");
+  fetch("/v1/verdict/link/terms").then(function (r) { return r.json(); }).then(function (j) {
+    terms = j;
+    if (!requirement()) throw new Error("no terms");
+    setStatus("Wallet found. Connect it to check a link for " + centsOf(requirement().amount) + "c in testnet pieUSD.");
+    addActionButton("Connect wallet", true, connect);
+  }).catch(function () {
+    setStatus("Could not load the payment terms. Is the API awake? Reload the page to try again.");
+  });
+})();
 </script>`;
   return shell({ title: "Verdict API — a paid second opinion for AI agents", body });
 }

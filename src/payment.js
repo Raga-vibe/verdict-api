@@ -64,12 +64,17 @@ function inputFields(kind) {
 }
 
 const baseFacilitator = new HTTPFacilitatorClient({ url: config.payments.facilitator });
+// Last verify outcome, so a failed payment can be explained instead of
+// answered with the library's empty {} body. Set and read in the same
+// request flow (verify, then the middleware answers), never across requests.
+let lastVerifyResult = null;
 const loggedFacilitator = {
   getSupported: (...args) => baseFacilitator.getSupported(...args),
   async verify(payload, requirements) {
     if (config.debug) console.log("[DEBUG] Decoded PAYMENT-SIGNATURE payload:", JSON.stringify(payload, null, 2));
     try {
       const response = await baseFacilitator.verify(payload, requirements);
+      lastVerifyResult = response;
       if (config.debug) console.log("[DEBUG] Full /v2/verify response:", JSON.stringify(response, null, 2));
       return response;
     } catch (error) {
@@ -140,6 +145,23 @@ export function requirePayment(kind, base = "") {
         settle: settlement,
       };
       next();
+    };
+    // The library answers a failed verification with an empty {} body.
+    // Swap that one case for a helpful error in the standard envelope,
+    // using the facilitator's reason when one was captured. Successful
+    // payments and any non-empty body pass through untouched.
+    const originalJson = res.json.bind(res);
+    res.json = (body) => {
+      if (res.statusCode === 402 && body && typeof body === "object" && Object.keys(body).length === 0) {
+        const reason = lastVerifyResult?.invalidReason || lastVerifyResult?.error || null;
+        const detail = reason ? ` The facilitator said: ${reason}.` : "";
+        return originalJson({
+          error: `Payment verification failed.${detail} Check your pieUSD balance on Kite testnet and that the payment matches the terms, then try again.`,
+          code: "PAYMENT_FAILED",
+          ...(reason ? { reason } : {}),
+        });
+      }
+      return originalJson(body);
     };
     Promise.resolve(middleware(req, res, continueAfterPayment)).catch(next);
   };

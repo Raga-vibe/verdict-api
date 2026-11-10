@@ -22,7 +22,7 @@ Version 1 lives under `/v1/`. The unversioned `/verdict/...` paths still work fo
 
 ## API details
 
-- **Errors** always come back as `{ "error": "<human message>", "code": "<MACHINE_CODE>" }`, with an extra `detail` on failures and `path` on 404s. Codes: `VALIDATION_ERROR` (400), `UNKNOWN_KIND` (404), `NOT_FOUND` (404), `METHOD_NOT_ALLOWED` (405, with an `Allow: POST` header), `VERDICT_FAILED` (500), `INTERNAL_ERROR` (500). A 402 is `PAYMENT_REQUIRED`: the body carries the full x402 terms (price, network, asset, pay-to) plus a human-readable hint, and the same terms are in the `payment-required` header, so both curl users and x402 clients can pay from the one response. A `GET` on a POST-only verdict path is a 405, never an HTML error page.
+- **Errors** always come back as `{ "error": "<human message>", "code": "<MACHINE_CODE>" }`, with an extra `detail` on failures and `path` on 404s. Codes: `VALIDATION_ERROR` (400), `UNKNOWN_KIND` (404), `NOT_FOUND` (404), `METHOD_NOT_ALLOWED` (405, with an `Allow: POST` header), `VERDICT_FAILED` (500), `INTERNAL_ERROR` (500). A 402 is `PAYMENT_REQUIRED`: the body carries the full x402 terms (price, network, asset, pay-to) plus a human-readable hint, and the same terms are in the `payment-required` header, so both curl users and x402 clients can pay from the one response. A 402 can also be `PAYMENT_FAILED` when a signed payment is rejected by the facilitator (for example `insufficient_funds`); the body names the reason instead of coming back empty. A `GET` on a POST-only verdict path is a 405, never an HTML error page.
 - **Versioning:** breaking changes go under a new `/vN/` prefix; the current paths are v1 (`"version": "1.0.0"` in `GET /` and `/health`).
 - **Pagination:** `/stats` pages recent verdicts with `?limit=` and `?offset=`, newest first, and returns `limit`, `offset` and `total`.
 - **Rate limiting:** the paid verdict endpoints are payment-gated, which is the limit that matters: every call costs 2-5¢. The free read endpoints (`/health`, `/stats`, `/openapi.json`, terms) are unmetered on the free tier.
@@ -52,7 +52,7 @@ Start with `PAYMENTS_MODE=off`, switch to `on` once your Kite wallet is set up. 
 
 Paid run against the live API instead: `VERDICT_URL=https://verdict-api-t50q.onrender.com SCAM_URL=https://<public-scam-page> HONEST_URL=https://<public-honest-page> npm run demo`.
 
-Open `http://localhost:3000/` in a browser for the landing page (pricing, how it works, free payment-terms try-it), and watch earnings at `GET /dashboard` (KPI cards, calls by endpoint, verdict mix, recent verdicts with the SERV reason, filters, Pause updates). It refreshes every 3 seconds unless paused. Note: receipts live on the server and reset when Render redeploys or restarts the free instance.
+Open `http://localhost:3000/` in a browser for the landing page (pricing, how it works, a free payment-terms try-it, and a wallet try-it that runs a real 3&cent; link check in the browser with no terminal), and watch earnings at `GET /dashboard` (KPI cards, calls by endpoint, verdict mix, recent verdicts with the SERV reason, filters, Pause updates). It refreshes every 3 seconds unless paused. Note: receipts live on the server and reset when Render redeploys or restarts the free instance.
 
 ## Example response
 
