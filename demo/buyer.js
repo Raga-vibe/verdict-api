@@ -82,6 +82,14 @@ async function checkPage(pageUrl, label) {
     return { ...probeResponse.data, paid: false, txHash: null };
   }
 
+  if (probe.status === 503) {
+    // The reasoning service is not configured: the call was refused
+    // before any payment, so this is not a verdict failure and not a
+    // refusal to buy. Say so plainly and stop.
+    const code = probeResponse.data?.code || "SERVICE_UNAVAILABLE";
+    throw new Error(`Verdict service unavailable (${code}): ${probeResponse.data?.error || "the reasoning service is not configured"}. No payment was taken.`);
+  }
+
   if (probe.status !== 402) {
     throw new Error(`Verdict call failed: HTTP ${probe.status} ${probeResponse.text}`);
   }

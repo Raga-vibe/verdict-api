@@ -9,6 +9,15 @@ function getClient() {
   return client;
 }
 
+// Readiness signal for the SERV pre-check: can SERV run a call right now?
+// Presence check only. The key and the base URL are the configuration a
+// call needs, and the base URL is fixed in this module, so a present key
+// means configured. A present-but-wrong key is still only discovered when
+// SERV answers; that failure happens after payment, exactly as before.
+export function isServConfigured() {
+  return Boolean(config.serv.apiKey);
+}
+
 // SERV Tools: declared as tools, handled server-side by SERV, never called by the model.
 const SERV_TOOLS = [
   { type: "function", function: { name: "serv_prompt_guard" } },

@@ -631,7 +631,7 @@ load("link");
     var body = JSON.stringify({ url: url });
     fetch("/v1/verdict/link", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: body }).then(function (probe) {
       if (probe.ok) return probe.json().then(function (d) { return { done: true, data: d, res: probe }; });
-      if (probe.status !== 402) return probe.text().then(function (t) { throw new Error("Verdict call failed: HTTP " + probe.status + " " + t.slice(0, 200)); });
+      if (probe.status !== 402) return probe.text().then(function (t) { var msg = t; try { var j = JSON.parse(t); msg = j.error || t; } catch (e) { msg = t; } throw new Error("Verdict call failed: HTTP " + probe.status + " " + String(msg).slice(0, 300)); });
       return probe.text().then(function (text) {
         var challenge = null;
         try { challenge = JSON.parse(text); } catch (e) { challenge = null; }

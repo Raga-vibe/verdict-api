@@ -8,6 +8,7 @@ const cases = [
 ];
 
 const rows = [];
+let skippedServ = false;
 for (const testCase of cases) {
   let verdict = "ERROR";
   let confidence = "—";
@@ -20,6 +21,15 @@ for (const testCase of cases) {
       body: JSON.stringify({ url: `http://localhost:4000/${testCase.file}` }),
     });
     const result = await response.json();
+    if (response.status === 503) {
+      // SERV is not configured: the pre-check refused the call before
+      // any verdict ran, so this is not a failure of the verdict logic.
+      // Skip it and say how to run the eval for real instead of
+      // reporting six confusing errors.
+      skippedServ = true;
+      rows.push({ file: testCase.file, expected: testCase.expected, actual: "SKIP", confidence: "—", injection_detected: "—", result: "SKIP" });
+      continue;
+    }
     if (response.status === 402) {
       // Payments are on: the call was never judged, so this is not a
       // failure of the verdict logic. Skip it and say how to run the
@@ -49,4 +59,4 @@ console.log(columns.map((column) => "-".repeat(widths[column])).join("-+-"));
 for (const row of rows) console.log(columns.map((column) => String(row[column]).padEnd(widths[column])).join(" | "));
 const passed = rows.filter((row) => row.result === "PASS").length;
 const skipped = rows.filter((row) => row.result === "SKIP").length;
-console.log(`\n${passed}/${rows.length} passed${skipped ? `, ${skipped} skipped (payments are on; rerun with PAYMENTS_MODE=off)` : ""}`);
+console.log(`\n${passed}/${rows.length} passed${skipped ? `, ${skipped} skipped (${skippedServ ? "SERV is not configured; set SERV_API_KEY to run the eval for real" : "payments are on; rerun with PAYMENTS_MODE=off"})` : ""}`);

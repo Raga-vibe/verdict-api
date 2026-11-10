@@ -98,6 +98,41 @@ export function paymentFailedBody({ verifyResult }) {
 }
 
 // ---------------------------------------------------------------------------
+// SERV readiness: whether the reasoning service can run a verdict at all.
+// M11. The states are derived from configuration at request time, not
+// probed live: a present key means READY, a missing key means MISSING_KEY.
+// UNINITIALIZED is the state before the first check runs. The pre-check in
+// src/server.js answers MISSING_KEY with a 503 before any payment is
+// requested, verified, or settled, so a verdict can never be charged and
+// then fail for a missing key. A present-but-wrong key still only fails
+// when SERV answers; that is a known limit, not a state this table can see.
+// ---------------------------------------------------------------------------
+export const SERV_STATES = {
+  UNINITIALIZED: { code: null, http: null, terminal: false, description: "Readiness has not been checked yet." },
+  READY: { code: null, http: null, terminal: false, description: "SERV is configured and a verdict can run." },
+  MISSING_KEY: { code: "SERVICE_UNAVAILABLE", http: 503, terminal: true, description: "SERV is not configured, so no verdict can run and no payment may be taken." },
+};
+
+export const SERV_TRANSITIONS = {
+  UNINITIALIZED: ["READY", "MISSING_KEY"],
+  READY: [],
+  MISSING_KEY: [],
+};
+
+export function servState(configured) {
+  return configured ? "READY" : "MISSING_KEY";
+}
+
+// 503 body for a verdict call when SERV cannot run. Standard error
+// envelope, no payment taken, no terms, no receipt.
+export function serviceUnavailableBody() {
+  return {
+    error: "Verdicts are unavailable right now because the reasoning service (SERV) is not configured. No payment was taken.",
+    code: "SERVICE_UNAVAILABLE",
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Verdict pipeline: the stages one call walks, in order. Optional stages
 // only appear when they run. The stages actually traversed are returned in
 // `checks.stages` on the 200 response and stored on the receipt, so any

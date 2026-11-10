@@ -1,6 +1,8 @@
 import express from "express";
 import { config, PRICES, API_VERSION } from "./config.js";
 import { requirePayment, paymentTerms } from "./payment.js";
+import { isServConfigured } from "./serv.js";
+import { serviceUnavailableBody, servState } from "./states.js";
 import { linkEvidence, claimEvidence, tokenEvidence } from "./evidence.js";
 import { runVerdict } from "./verdict.js";
 import { logReceipt, readReceipts } from "./receipts.js";
@@ -73,7 +75,7 @@ function openapiDoc() {
     type: "object",
     properties: {
       error: { type: "string", description: "Human-readable message" },
-      code: { type: "string", description: "Stable machine-readable code: VALIDATION_ERROR, UNKNOWN_KIND, METHOD_NOT_ALLOWED, NOT_FOUND, PAYMENT_REQUIRED, PAYMENT_FAILED, VERDICT_FAILED, INTERNAL_ERROR" },
+      code: { type: "string", description: "Stable machine-readable code: VALIDATION_ERROR, UNKNOWN_KIND, METHOD_NOT_ALLOWED, NOT_FOUND, PAYMENT_REQUIRED, PAYMENT_FAILED, SERVICE_UNAVAILABLE, VERDICT_FAILED, INTERNAL_ERROR" },
       detail: { type: "string" },
       path: { type: "string" },
     },
@@ -99,6 +101,7 @@ function openapiDoc() {
       200: { description: "Verdict with quoted evidence", content: { "application/json": { schema: verdictSchema } } },
       400: { description: "Validation error", content: { "application/json": { schema: errorSchema } } },
       402: { description: "Payment required, or a signed payment rejected by the facilitator: x402 v2 terms for this check, plus the standard error envelope", content: { "application/json": { schema: { type: "object", properties: { x402Version: { type: "integer" }, resource: { type: "object" }, accepts: { type: "array" }, error: { type: "string", description: "Human-readable message saying what the check costs and how to pay, or why a signed payment was rejected" }, code: { type: "string", description: "PAYMENT_REQUIRED or PAYMENT_FAILED" }, reason: { type: "string", description: "Facilitator reason for a rejected payment, e.g. insufficient_funds" } } } } } },
+      503: { description: "Reasoning service (SERV) not configured, so no verdict can run. No payment was taken.", content: { "application/json": { schema: errorSchema } } },
       405: { description: "Wrong method for this path", content: { "application/json": { schema: errorSchema } } },
       500: { description: "Verdict failed", content: { "application/json": { schema: errorSchema } } },
     },
@@ -152,6 +155,18 @@ function handler(kind, getEvidence, validate, base) {
     (req, res, next) => {
       const err = validate(req.body || {});
       return err ? apiError(res, 400, "VALIDATION_ERROR", err) : next();
+    },
+    // SERV pre-check: runs after validation (a malformed request still
+    // deserves its 400) and before any payment is requested, verified, or
+    // settled. The SERV readiness table in src/states.js decides: READY
+    // proceeds, MISSING_KEY answers 503 and takes no payment. It sits in
+    // this chain, not in requirePayment, so it also applies with
+    // PAYMENTS_MODE=off: a free call that cannot produce a verdict is an
+    // honest 503, not a 500 after the fact. Free reads (terms, health,
+    // stats, openapi.json, dashboard, landing page) never pass through
+    // here and are unaffected.
+    (req, res, next) => {
+      return servState(isServConfigured()) === "READY" ? next() : res.status(503).json(serviceUnavailableBody());
     },
     requirePayment(kind, base),
     async (req, res) => {
