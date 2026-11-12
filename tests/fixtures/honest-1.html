@@ -1,7 +1,73 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Harbor &amp; Pine — Everyday Goods</title></head>
-<body><header><h1>Harbor &amp; Pine</h1><p>Thoughtful home goods since 2014.</p></header>
-<main><h2>Canvas Market Tote</h2><p>Reusable cotton canvas tote, £18. Made in small batches.</p><button>Add to basket</button>
-<h2>Payment</h2><p>Pay securely by Visa, Mastercard, or American Express. Checkout is processed by our card provider.</p>
-<h2>Returns</h2><p>Return unused items within 30 days for a refund. Email us to arrange a return.</p></main>
-<footer><p>Contact: help@harborandpine.example | +44 20 7946 0123</p><p>Harbor &amp; Pine Ltd, 14 Market Street, Bristol, BS1 4AA, United Kingdom.</p></footer></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harbor &amp; Pine — Everyday Goods</title>
+<style>
+  :root{--pine:#1f4433;--paper:#f7f3eb;--brass:#a97e2f;--ink:#233026;--card:#ffffff;--line:#e3dccb;--muted:#5c665a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Helvetica Neue",Arial,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
+  header{background:var(--pine);color:#f7f3eb;padding:30px 24px}
+  .head-inner{max-width:1020px;margin:0 auto}
+  header h1{margin:0;font-size:clamp(2rem,4.5vw,3rem);font-weight:800;letter-spacing:-.02em;line-height:1.05}
+  header p{margin:6px 0 0;opacity:.85;font-size:1.05rem}
+  .wrap{max-width:1020px;margin:0 auto;padding:0 24px}
+  .product{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;padding:48px 0 8px}
+  .visual{background:linear-gradient(160deg,#e9e2cf,#dfe8dd);border-radius:20px;height:380px;display:grid;place-items:center;position:relative;overflow:hidden}
+  .tote{width:190px;height:205px;border:4px solid var(--pine);border-radius:10px;position:relative;background:rgba(255,255,255,.55);margin-top:52px}
+  .tote::before,.tote::after{content:"";position:absolute;top:-56px;width:62px;height:60px;border:4px solid var(--pine);border-bottom:none;border-radius:62px 62px 0 0}
+  .tote::before{left:24px}
+  .tote::after{right:24px}
+  .stitch{position:absolute;left:14px;right:14px;top:34px;border-top:2px dashed var(--brass)}
+  .info h2{margin:0;font-size:clamp(1.7rem,3.5vw,2.2rem);font-weight:800;letter-spacing:-.01em;color:var(--pine)}
+  .info p{margin:14px 0 0;font-size:1.1rem;color:var(--ink)}
+  .info p strong{font-size:1.6rem;color:var(--pine)}
+  .info button{margin-top:24px;background:var(--brass);color:#fff;border:none;padding:15px 30px;font-size:1rem;font-weight:700;border-radius:12px;cursor:pointer;font-family:inherit}
+  .info button:hover{background:#8f6a24}
+  .info button:focus-visible{outline:3px solid var(--pine);outline-offset:3px}
+  .details{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:40px}
+  .details section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px}
+  .details h2{margin:0 0 8px;font-size:1.25rem;color:var(--pine)}
+  .details p{margin:0;color:var(--ink)}
+  footer{background:var(--pine);color:#f7f3eb;padding:30px 24px;margin-top:52px}
+  footer .wrap p{margin:0;font-size:.95rem}
+  footer .wrap p + p{margin-top:6px;opacity:.8;font-size:.9rem}
+  @media (max-width:680px){
+    .product{grid-template-columns:1fr;gap:24px;padding-top:32px}
+    .visual{height:300px}
+    .details{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<header><div class="head-inner">
+<h1>Harbor &amp; Pine</h1>
+<p>Thoughtful home goods since 2014.</p>
+</div></header>
+<main class="wrap">
+<div class="product">
+<div class="visual" aria-hidden="true"><div class="tote"><div class="stitch"></div></div></div>
+<div class="info">
+<h2>Canvas Market Tote</h2>
+<p>Reusable cotton canvas tote, <strong>£18</strong>. Made in small batches.</p>
+<button>Add to basket</button>
+</div>
+</div>
+<div class="details">
+<section>
+<h2>Payment</h2>
+<p>Pay securely by Visa, Mastercard, or American Express. Checkout is processed by our card provider.</p>
+</section>
+<section>
+<h2>Returns</h2>
+<p>Return unused items within 30 days for a refund. Email us to arrange a return.</p>
+</section>
+</div>
+</main>
+<footer><div class="wrap">
+<p>Contact: help@harborandpine.example | +44 20 7946 0123</p>
+<p>Harbor &amp; Pine Ltd, 14 Market Street, Bristol, BS1 4AA, United Kingdom.</p>
+</div></footer>
+</body>
+</html>
