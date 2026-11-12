@@ -270,12 +270,33 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <label class="wt-label" for="wt-url">Page to check</label>
 <input class="wt-input" id="wt-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" value="https://raw.githubusercontent.com/Raga-vibe/verdict-api/master/tests/fixtures/scam-1.html">
 <div class="wt-row"><button type="button" class="btn primary" id="wt-check" disabled>Check this link &middot; 3&cent;</button></div>
-<p class="wt-note">You sign one payment of 3&cent; in your wallet. Nothing is charged until you approve the signature in your wallet. Testnet only, so the pieUSD is free from the faucet.</p>
+<p class="wt-note">You sign one payment of 3&cent; in your wallet. Nothing is charged until you approve the signature in your wallet. Testnet only, so the pieUSD is free testnet money.</p>
 </div>
 <div id="wt-error" class="wt-error" hidden></div>
 <div id="wt-result" class="wt-result"></div>
 </div>
 <p class="sub" style="margin-top:14px">Need testnet pieUSD? Get free KITE at the <a href="https://faucet.gokite.ai" target="_blank" rel="noreferrer">Kite testnet faucet</a>, and testnet pieUSD from the Kite Passport sandbox (<code>kpass sandbox on</code>, then <code>kpass faucet drop</code>). No wallet yet? Install <a href="https://metamask.io/download/" target="_blank" rel="noreferrer">MetaMask</a>, or open this page inside your wallet app&rsquo;s browser.</p>
+</section>
+
+<section>
+<h2>See a sample verdict, no wallet needed</h2>
+<p class="sub">This is a real result from a paid 3&cent; link check, not a live check. It shows exactly what an agent gets back.</p>
+<div class="card">
+<div class="kv">
+<div class="row"><div class="k">Page checked</div><div class="v">Nike Official Clearance, a scam fixture page</div></div>
+<div class="row"><div class="k">Verdict</div><div class="v"><strong>scam</strong> &middot; confidence 0.99</div></div>
+<div class="row"><div class="k">Price paid</div><div class="v">3&cent; in testnet pieUSD</div></div>
+<div class="row"><div class="k">Payment</div><div class="v"><a href="https://testnet.kitescan.ai/tx/0x460a644c56a5a8ac2d455c9fb3f335c0762e07a9d41170b0347ae71385eb3c19" target="_blank" rel="noreferrer">Settled on Kite testnet</a></div></div>
+</div>
+<p style="margin:12px 0 6px"><strong>Why:</strong> The page exhibits multiple scam indicators: brand/domain mismatch, unrealistic discount and urgency, and crypto payment to a personal wallet.</p>
+<p style="margin:6px 0"><strong>Quoted evidence:</strong></p>
+<ul>
+<li>&ldquo;Nike Official Store &mdash; 80% OFF EVERYTHING&rdquo;</li>
+<li>&ldquo;Unrelated outlet domain: nike-super-deals.example&rdquo;</li>
+<li>&ldquo;Payment accepted only in USDT. Send USDT directly to our personal wallet: 0x71cA00000000000000000000000000000000beef.&rdquo;</li>
+</ul>
+<p class="sub">Every quote above was checked against the page before the verdict was returned. <a href="/dashboard">See the live dashboard</a>.</p>
+</div>
 </section>
 
 <section>
