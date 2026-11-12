@@ -50,7 +50,7 @@ export function paymentCanTransition(from, to) {
 // the next action. Unknown reasons fall back to the generic hint, which is
 // the message the server used for every failure before this table existed.
 export const VERIFY_REASON_GUIDANCE = {
-  insufficient_funds: "Your pieUSD balance is too low for this check. Get free testnet pieUSD from the Kite faucet (https://faucet.gokite.ai), then try again.",
+  insufficient_funds: "Your pieUSD balance is too low for this check. Get free testnet pieUSD from the Kite Passport sandbox (kpass sandbox on, then kpass faucet drop), then try again.",
   invalid_exact_evm_payload_signature: "The signature does not match the payment authorization. Sign again from the same wallet without editing the payment details.",
   invalid_exact_evm_payload_authorization_valid_before: "The payment authorization has expired. Ask for fresh terms and sign again.",
   invalid_exact_evm_payload_authorization_valid_after: "The payment authorization is not valid yet. Ask for fresh terms and sign again.",

@@ -275,7 +275,7 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div id="wt-error" class="wt-error" hidden></div>
 <div id="wt-result" class="wt-result"></div>
 </div>
-<p class="sub" style="margin-top:14px">Need testnet pieUSD? Get free KITE and pieUSD at the <a href="https://faucet.gokite.ai" target="_blank" rel="noreferrer">Kite testnet faucet</a>. No wallet yet? Install <a href="https://metamask.io/download/" target="_blank" rel="noreferrer">MetaMask</a>, or open this page inside your wallet app&rsquo;s browser.</p>
+<p class="sub" style="margin-top:14px">Need testnet pieUSD? Get free KITE at the <a href="https://faucet.gokite.ai" target="_blank" rel="noreferrer">Kite testnet faucet</a>, and testnet pieUSD from the Kite Passport sandbox (<code>kpass sandbox on</code>, then <code>kpass faucet drop</code>). No wallet yet? Install <a href="https://metamask.io/download/" target="_blank" rel="noreferrer">MetaMask</a>, or open this page inside your wallet app&rsquo;s browser.</p>
 </section>
 
 <section>
