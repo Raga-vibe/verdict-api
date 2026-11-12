@@ -204,10 +204,10 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <aside class="receipt" aria-label="Real paid verdict receipt">
 <div class="receipt-head"><span>Verdict receipt</span><span class="tag">Real paid verdict</span></div>
 <div class="stamp" aria-hidden="true">Scam</div>
-<div class="row" style="margin-top:52px"><span class="k">Subject</span><span class="v">cheap-iphone-deals.example</span></div>
+<div class="row" style="margin-top:52px"><span class="k">Subject</span><span class="v">nike-super-deals.example</span></div>
 <div class="row"><span class="k">Verdict</span><span class="v"><span class="badge scam">scam</span></span></div>
 <div class="row"><span class="k">Confidence</span><span class="v">99%</span></div>
-<div class="row"><span class="k">Evidence</span><span class="v">&ldquo;90% off iPhone 16 Pro — today only!&rdquo;</span></div>
+<div class="row"><span class="k">Evidence</span><span class="v">&ldquo;Payment accepted only in USDT. Send USDT directly to our personal wallet.&rdquo;</span></div>
 <div class="row"><span class="k">Injection</span><span class="v">not flagged</span></div>
 <div class="row"><span class="k">Paid</span><span class="v">3&cent; pieUSD</span></div>
 <div class="row"><span class="k">Tx</span><span class="v"><a href="https://testnet.kitescan.ai/tx/0x460a644c56a5a8ac2d455c9fb3f335c0762e07a9d41170b0347ae71385eb3c19" target="_blank" rel="noreferrer">0x460a644c&hellip;eb3c19</a></span></div>
@@ -275,8 +275,8 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div class="card">
 <div class="wall-top"><span class="badge scam">scam</span><span class="wall-conf">99% confidence</span></div>
 <h3>Scam page</h3>
-<p class="wall-sub">cheap-iphone-deals.example</p>
-<p>A page claiming to be the official Apple Store, selling an iPhone 16 Pro at 90% off and asking for crypto payment.</p>
+<p class="wall-sub">nike-super-deals.example</p>
+<p>A page claiming to be the Nike Official Store at 80% off, on an unrelated outlet domain, asking for USDT to a personal wallet.</p>
 <p class="wall-meta">Nov 12, 2026 &middot; Injection: not flagged &middot; <a href="https://testnet.kitescan.ai/tx/0x460a644c56a5a8ac2d455c9fb3f335c0762e07a9d41170b0347ae71385eb3c19" target="_blank" rel="noreferrer">Tx 0x460a644c&hellip;eb3c19</a></p>
 </div>
 <div class="card">
