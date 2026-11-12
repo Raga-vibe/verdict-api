@@ -5,7 +5,7 @@ import { isServConfigured } from "./serv.js";
 import { serviceUnavailableBody, servState } from "./states.js";
 import { linkEvidence, claimEvidence, tokenEvidence } from "./evidence.js";
 import { runVerdict } from "./verdict.js";
-import { logReceipt, readReceipts } from "./receipts.js";
+import { logReceipt, readReceipts, updateReceipt } from "./receipts.js";
 import { landingPage, dashboardPage } from "./pages.js";
 
 const app = express();
@@ -33,12 +33,15 @@ app.get("/", (req, res) => {
     dashboard: "/dashboard",
   };
   if ((req.headers.accept || "").includes("text/html")) {
+    const receipts = readReceipts();
+    const paid = receipts.filter((x) => x.payment_mode === "x402");
     return res.type("html").send(landingPage({
       prices: PRICES,
       paymentsMode: config.payments.mode,
       network: config.payments.network,
       asset: config.payments.asset,
       payTo: config.payments.payTo,
+      stats: { calls: receipts.length, paidCalls: paid.length, earnedCents: paid.reduce((n, x) => n + (x.paid_cents || 0), 0) },
     }));
   }
   res.json(info);
@@ -176,6 +179,21 @@ function handler(kind, getEvidence, validate, base) {
         const evidence = typeof fetched === "string" ? fetched : fetched.evidence;
         const result = await runVerdict(kind, evidence, { rawHtml: fetched.rawHtml || "", stages: ["fetching_evidence"] });
         const receipt = logReceipt({ kind, input: req.body, verdict: result.verdict, confidence: result.confidence, summary: String(result.summary || "").slice(0, 280), injection_detected: result.injection_detected, model: result.model, quotes_verified: result.checks.quotes_verified, stages: result.checks.stages, paid_cents: req.payment.amountCents, payment_mode: req.payment.mode, tx: req.payment.tx ?? null, ms: Date.now() - started });
+        // The x402 middleware settles only after the handler returns, so
+        // req.payment.tx is still null when the receipt is logged. Patch the
+        // receipt once the response is sent: by then the middleware has set
+        // the PAYMENT-RESPONSE header, which carries the settlement tx hash.
+        if (req.payment.mode === "x402") {
+          res.on("finish", () => {
+            try {
+              const header = res.getHeader("PAYMENT-RESPONSE") || res.getHeader("X-PAYMENT-RESPONSE");
+              if (!header) return;
+              const settlement = JSON.parse(Buffer.from(String(header), "base64").toString("utf8"));
+              const tx = settlement?.transaction ?? settlement?.transactionHash ?? settlement?.txHash ?? null;
+              if (tx) updateReceipt(receipt, { tx });
+            } catch {}
+          });
+        }
         res.json({ ...result, receipt });
       } catch (e) {
         console.error(e);

@@ -21,22 +21,9 @@ header.top .wrap{display:flex;align-items:center;gap:20px;height:58px}
 nav{margin-left:auto;display:flex;gap:18px;font-size:14px}
 nav a{color:var(--muted)}
 nav a:hover{color:#fff;text-decoration:none}
-.hero{padding:64px 0 40px}
-.hero-grid{display:grid;gap:32px;align-items:start}
-@media(min-width:860px){.hero-grid{grid-template-columns:1.05fr .95fr}}
+.hero{padding:44px 0 28px}
 .eyebrow{color:var(--accent);font-weight:600;font-size:14px}
-.hero h1{font-family:var(--font-display);font-size:44px;line-height:1.08;margin:14px 0 16px;letter-spacing:-.03em;color:#fff}
-.receipt{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;position:relative}
-.receipt-head{display:flex;justify-content:space-between;gap:12px;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
-.receipt-head .tag{color:var(--amber);font-weight:700}
-.stamp{position:absolute;top:38px;right:16px;border:3px solid var(--red);color:var(--red);font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.08em;padding:2px 10px;border-radius:6px;transform:rotate(-4deg);animation:stamp-in .25s ease-out both}
-@keyframes stamp-in{from{opacity:0;transform:rotate(-4deg) scale(1.4)}to{opacity:1;transform:rotate(-4deg) scale(1)}}
-.receipt .row{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px}
-.receipt .row:last-of-type{border-bottom:0}
-.receipt .k{color:var(--muted);flex:0 0 auto}
-.receipt .v{color:#fff;text-align:right;word-break:break-word;font-family:var(--font-mono);font-size:13px}
-.receipt .v .badge{font-family:var(--font-display)}
-.receipt-foot{font-size:13px;color:var(--muted);margin:12px 0 0}
+.hero h1{font-family:var(--font-display);font-size:38px;line-height:1.08;margin:14px 0 16px;letter-spacing:-.03em;color:#fff}
 .hero p.lede{font-size:19px;color:var(--muted);max-width:640px;margin:0 0 24px}
 .btns{display:flex;gap:12px;flex-wrap:wrap}
 .btn{display:inline-block;padding:11px 20px;border-radius:8px;font-weight:700;font-size:15px;border:1px solid var(--line);color:#fff;background:var(--panel)}
@@ -46,7 +33,10 @@ nav a:hover{color:#fff;text-decoration:none}
 .pill{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);background:var(--panel)}
 .pill b{color:var(--green);font-weight:700}
 .pill .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}
-section{padding:36px 0}
+.price-chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px}
+.price-chip{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);background:var(--panel);font-family:var(--font-mono)}
+.price-chip b{color:var(--accent);font-weight:700}
+section{padding:28px 0}
 h2{font-family:var(--font-display);font-size:24px;letter-spacing:-.02em;color:#fff;margin:0 0 8px}
 .sub{color:var(--muted);margin:0 0 20px;max-width:640px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
@@ -101,13 +91,13 @@ th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06
 .live{font-size:13px;color:var(--muted)}
 .live b{color:var(--green)}
 @media(max-width:640px){.hero h1{font-size:32px}.hero{padding:40px 0 24px}.wrap{padding:0 16px}nav{gap:12px;font-size:13px}.kpi .value{font-size:28px}}
-.dash-head{padding:48px 0 8px}
+.dash-head{padding:36px 0 8px}
 .dash-head h1{font-size:34px}
 .refresh-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;font-size:13px;color:var(--muted)}
 .refresh-row .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}
 .pause-btn{min-height:44px;padding:10px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;transition:border-color .2s}
 .pause-btn:hover{border-color:var(--accent)}
-.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:24px 0}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:18px 0}
 @media(min-width:900px){.kpi-grid{grid-template-columns:repeat(4,1fr)}}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
 .kpi .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(245,158,11,.12);color:var(--accent);margin-bottom:12px}
@@ -133,6 +123,10 @@ th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06
 .conf .bar{flex:1;height:6px;max-width:180px;background:#1e293b;border-radius:3px;overflow:hidden}
 .conf .bar i{display:block;height:100%;background:var(--green)}
 .vmeta{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.vcard ul{margin:10px 0 0;padding-left:20px;color:var(--muted);font-size:14px}
+.vcard li{margin:8px 0}
+.vcard li b{color:#fff;font-weight:600}
+.vcard blockquote{margin:4px 0 0;padding:6px 10px;border-left:3px solid var(--line);color:var(--muted);font-size:13px}
 .flag{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:rgba(251,191,36,.12);color:var(--amber);font-size:12px;font-weight:700}
 .empty h3{color:#fff;font-size:16px;margin:0 0 6px}
 .empty p{margin:0 0 14px}
@@ -168,75 +162,53 @@ function shell({ title, body }) {
 }
 
 function topNav(active) {
+  const homeLinks = active === "home" ? `<a href="#sample">Sample verdict</a><a href="#try">Try it</a><a href="#pricing">Pricing</a>` : "";
   return `<header class="top"><div class="wrap">
 <a class="logo" href="/">Verdict<span> API</span></a>
-<nav><a href="/dashboard"${active === "dashboard" ? ' style="color:#fff"' : ""}>Dashboard</a><a href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">GitHub</a><a href="https://www.openserv.ai/hackathon-2" target="_blank" rel="noreferrer">Hackathon</a></nav>
+<nav>${homeLinks}<a href="/dashboard"${active === "dashboard" ? ' style="color:#fff"' : ""}>Dashboard</a><a href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">GitHub</a><a href="https://www.openserv.ai/hackathon-2" target="_blank" rel="noreferrer">Hackathon</a></nav>
 </div></header>`;
 }
 
-export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
+export function landingPage({ prices, paymentsMode, network, asset, payTo, stats }) {
   const shortAddr = (a) => (a ? a.slice(0, 6) + "..." + a.slice(-4) : "not set");
+  const s = stats || { calls: 0, paidCalls: 0, earnedCents: 0 };
   const body = `${topNav("home")}
 <main class="wrap">
-<div class="hero"><div class="hero-grid">
-<div>
+<div class="hero">
 <div class="eyebrow">OpenServ SERV Hackathon 02, Kite track</div>
 <h1>A paid second opinion<br>for AI agents.</h1>
-<p class="lede">Before an agent buys, signs up or trades, it asks Verdict API &ldquo;is this safe?&rdquo;, pays a few cents over x402 on Kite, and gets a clear verdict with quoted evidence. Reasoning by SERV, payments by Kite Passport.</p>
-<div class="btns"><a class="btn primary" href="/dashboard">View the dashboard</a><a class="btn" href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">Read the README</a></div>
+<p class="lede">Verdict is a pay-per-call API that lets AI agents check whether a link, claim, or token is a scam before they act on it. Reasoning by SERV, payments by x402 on Kite testnet.</p>
+<div class="price-chips"><span class="price-chip">Claim <b>${prices.claim}&cent;</b></span><span class="price-chip">Link <b>${prices.link}&cent;</b></span><span class="price-chip">Token <b>${prices.token}&cent;</b></span></div>
+<div class="btns"><a class="btn primary" href="#sample">See a sample verdict</a><a class="btn" href="#try">Try it</a><a class="btn" href="/dashboard">Dashboard</a></div>
 <div class="status">
 <span class="pill"><span class="dot"></span><b>Live</b> &middot; payments ${paymentsMode}</span>
+<span class="pill">Paid calls <b>${s.paidCalls}</b></span>
+<span class="pill">Earned <b>$${(s.earnedCents / 100).toFixed(2)}</b></span>
 <span class="pill">Network ${network}</span>
 <span class="pill">Token ${shortAddr(asset)}</span>
 <span class="pill">Seller ${shortAddr(payTo)}</span>
 </div>
 </div>
-<aside class="receipt" aria-label="Example verdict receipt">
-<div class="receipt-head"><span>Verdict receipt</span><span class="tag">Example</span></div>
-<div class="stamp" aria-hidden="true">Scam</div>
-<div class="row" style="margin-top:52px"><span class="k">Subject</span><span class="v">fake-brand-sneakers.example</span></div>
-<div class="row"><span class="k">Verdict</span><span class="v"><span class="badge scam">scam</span></span></div>
-<div class="row"><span class="k">Confidence</span><span class="v">86%</span></div>
-<div class="row"><span class="k">Evidence</span><span class="v">&ldquo;send USDT to 0x&hellip;&rdquo;</span></div>
-<div class="row"><span class="k">Injection</span><span class="v">flagged</span></div>
-<div class="row"><span class="k">Paid</span><span class="v">3&cent; pieUSD</span></div>
-<div class="row"><span class="k">Tx</span><span class="v">0xabc123&hellip;7890</span></div>
-<p class="receipt-foot">An example from the demo agent. Every paid call returns a receipt like this, with the reason SERV gave. <a href="/dashboard">See real ones on the dashboard</a>.</p>
-</aside>
-</div></div>
 
-<section>
-<h2>How a call works</h2>
-<p class="sub">Four steps, every time. No account, no API key on the agent side. The agent just pays.</p>
-<div class="steps">
-<div class="step"><div class="n">1</div><div><h3>Agent asks, gets a 402</h3><p>The agent calls an endpoint with no payment and gets a 402 with the exact x402 terms: price, token, seller and timeout.</p></div></div>
-<div class="step"><div class="n">2</div><div><h3>Agent pays over x402 on Kite</h3><p>Its Kite Passport pays a few cents in pieUSD and resends the call with a payment signature. The Pieverse facilitator verifies and settles it.</p></div></div>
-<div class="step"><div class="n">3</div><div><h3>We gather the evidence</h3><p>Page text, sources or DexScreener data, depending on the endpoint. Hidden instruction-like text on the page is flagged by our own scanner.</p></div></div>
-<div class="step"><div class="n">4</div><div><h3>SERV Reasoning decides, with receipts</h3><p>SERV Reasoning judges with Prompt Guard and Shadow Agent on. Our code then checks every quoted reason really exists in the evidence. No verified quote, no confident verdict. The receipt is logged with its transaction.</p></div></div>
+<section id="sample">
+<h2>See a sample verdict, no wallet needed</h2>
+<p class="sub">A real result from a paid 3&cent; link check. This is what an agent gets back.</p>
+<div class="vcard">
+<div class="vcard-top"><span class="subject">Nike Official Clearance, a scam fixture page</span><span class="badge scam">scam</span></div>
+<p class="vsummary">The page exhibits multiple scam indicators: brand/domain mismatch, unrealistic discount and urgency, and crypto payment to a personal wallet.</p>
+<div class="conf"><span>Confidence 99%</span><span class="bar"><i style="width:99%;background:#ef4444"></i></span></div>
+<ul>
+<li><b>Unrealistic discount advertised for a branded store.</b><blockquote>&ldquo;Nike Official Store &mdash; 80% OFF EVERYTHING&rdquo;</blockquote></li>
+<li><b>Brand/domain mismatch is present.</b><blockquote>&ldquo;Unrelated outlet domain: nike-super-deals.example&rdquo;</blockquote></li>
+<li><b>Payment is requested in crypto to a personal wallet.</b><blockquote>&ldquo;Payment accepted only in USDT. Send USDT directly to our personal wallet: 0x71cA00000000000000000000000000000000beef.&rdquo;</blockquote></li>
+</ul>
+<div class="vmeta"><span>Link check, 3&cent; paid</span><span>Model gpt-5.4-mini-2026-03-17</span><a href="https://testnet.kitescan.ai/tx/0x460a644c56a5a8ac2d455c9fb3f335c0762e07a9d41170b0347ae71385eb3c19" target="_blank" rel="noreferrer">View tx 0x460a644c...</a><a href="/dashboard">See it on the dashboard</a></div>
 </div>
+<p class="sub" style="margin-top:12px">Every quote above was checked against the page before the verdict was returned.</p>
 </section>
 
-<section>
-<h2>Pricing</h2>
-<p class="sub">Pay per call, in pieUSD on Kite testnet. No subscription, no free tier to abuse.</p>
-<div class="grid">
-<div class="card"><h3>Claim</h3><div class="price">${prices.claim}<small> &cent;</small></div><p><code>POST /v1/verdict/claim</code></p><p>Is this claim supported by its sources? Verdicts: true / false / unclear.</p></div>
-<div class="card"><h3>Link</h3><div class="price">${prices.link}<small> &cent;</small></div><p><code>POST /v1/verdict/link</code></p><p>Is this page safe to buy from or sign up on? Verdicts: safe / risky / scam / unclear.</p></div>
-<div class="card"><h3>Token</h3><div class="price">${prices.token}<small> &cent;</small></div><p><code>POST /v1/verdict/token</code></p><p>Is this token a reasonable buy or a likely rug pull? Verdicts: safe / risky / scam / unclear.</p></div>
-</div>
-</section>
 
-<section>
-<h2>Why trust a verdict?</h2>
-<div class="grid">
-<div class="card"><h3>Quoted evidence, checked in code</h3><p>Every reason must quote the evidence word for word. Our code drops any reason whose quote is not in the evidence, and refuses a confident verdict with no verified reason.</p></div>
-<div class="card"><h3>Prompt-injection detection</h3><p>Hidden text that tries to instruct the agent, in comments or hidden elements, is flagged by the scanner and can only push a verdict toward risky, never toward safe.</p></div>
-<div class="card"><h3>Two SERV passes on hard calls</h3><p>Low-confidence or unparseable first answers are retried with the hard SERV model before we give up and answer unclear.</p></div>
-<div class="card"><h3>Auditable receipts</h3><p>Every paid call is logged with its verdict, price and settlement transaction, linked from the dashboard to the Kite testnet explorer.</p></div>
-</div>
-</section>
-
-<section>
+<section id="try">
 <h2>Try it: read the payment terms, free</h2>
 <p class="sub">Pick an endpoint to see exactly what an agent is asked to pay, before any payment happens.</p>
 <div class="tabs">
@@ -279,23 +251,32 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 </section>
 
 <section>
-<h2>See a sample verdict, no wallet needed</h2>
-<p class="sub">This is a real result from a paid 3&cent; link check, not a live check. It shows exactly what an agent gets back.</p>
-<div class="card">
-<div class="kv">
-<div class="row"><div class="k">Page checked</div><div class="v">Nike Official Clearance, a scam fixture page</div></div>
-<div class="row"><div class="k">Verdict</div><div class="v"><strong>scam</strong> &middot; confidence 0.99</div></div>
-<div class="row"><div class="k">Price paid</div><div class="v">3&cent; in testnet pieUSD</div></div>
-<div class="row"><div class="k">Payment</div><div class="v"><a href="https://testnet.kitescan.ai/tx/0x460a644c56a5a8ac2d455c9fb3f335c0762e07a9d41170b0347ae71385eb3c19" target="_blank" rel="noreferrer">Settled on Kite testnet</a></div></div>
+<h2>How a call works</h2>
+<p class="sub">Three steps, every time. No account, no API key on the agent side. The agent just pays.</p>
+<div class="steps">
+<div class="step"><div class="n">1</div><div><h3>Agent asks, gets a 402</h3><p>The agent calls an endpoint with no payment and gets a 402 with the exact x402 terms: price, token, seller and timeout.</p></div></div>
+<div class="step"><div class="n">2</div><div><h3>Agent pays over x402 on Kite</h3><p>The agent signs a few cents in pieUSD and resends the call with a payment signature. The Pieverse facilitator verifies and settles it.</p></div></div>
+<div class="step"><div class="n">3</div><div><h3>SERV Reasoning decides, quotes verified</h3><p>SERV Reasoning reads the gathered evidence with Prompt Guard and Shadow Agent on. Our code checks every quoted reason really exists in the evidence. No verified quote, no confident verdict. The receipt is logged with its transaction.</p></div></div>
 </div>
-<p style="margin:12px 0 6px"><strong>Why:</strong> The page exhibits multiple scam indicators: brand/domain mismatch, unrealistic discount and urgency, and crypto payment to a personal wallet.</p>
-<p style="margin:6px 0"><strong>Quoted evidence:</strong></p>
-<ul>
-<li>&ldquo;Nike Official Store &mdash; 80% OFF EVERYTHING&rdquo;</li>
-<li>&ldquo;Unrelated outlet domain: nike-super-deals.example&rdquo;</li>
-<li>&ldquo;Payment accepted only in USDT. Send USDT directly to our personal wallet: 0x71cA00000000000000000000000000000000beef.&rdquo;</li>
-</ul>
-<p class="sub">Every quote above was checked against the page before the verdict was returned. <a href="/dashboard">See the live dashboard</a>.</p>
+</section>
+
+<section id="pricing">
+<h2>Pricing</h2>
+<p class="sub">Pay per call, in pieUSD on Kite testnet. No subscription, no free tier to abuse.</p>
+<div class="grid">
+<div class="card"><h3>Claim</h3><div class="price">${prices.claim}<small> &cent;</small></div><p><code>POST /v1/verdict/claim</code></p><p>Is this claim supported by its sources? Verdicts: true / false / unclear.</p></div>
+<div class="card"><h3>Link</h3><div class="price">${prices.link}<small> &cent;</small></div><p><code>POST /v1/verdict/link</code></p><p>Is this page safe to buy from or sign up on? Verdicts: safe / risky / scam / unclear.</p></div>
+<div class="card"><h3>Token</h3><div class="price">${prices.token}<small> &cent;</small></div><p><code>POST /v1/verdict/token</code></p><p>Is this token a reasonable buy or a likely rug pull? Verdicts: safe / risky / scam / unclear.</p></div>
+</div>
+</section>
+
+<section>
+<h2>Why trust a verdict?</h2>
+<div class="grid">
+<div class="card"><h3>Quoted evidence, checked in code</h3><p>Every reason must quote the evidence word for word. Our code drops any reason whose quote is not in the evidence, and refuses a confident verdict with no verified reason.</p></div>
+<div class="card"><h3>Prompt-injection detection</h3><p>Hidden text that tries to instruct the agent, in comments or hidden elements, is flagged by the scanner and can only push a verdict toward risky, never toward safe.</p></div>
+<div class="card"><h3>Two SERV passes on hard calls</h3><p>Low-confidence or unparseable first answers are retried with the hard SERV model before we give up and answer unclear.</p></div>
+<div class="card"><h3>Auditable receipts</h3><p>Every paid call is logged with its verdict, price and settlement transaction, linked from the dashboard to the Kite testnet explorer.</p></div>
 </div>
 </section>
 
