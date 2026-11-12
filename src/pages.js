@@ -83,6 +83,10 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .badge.scam,.badge.false{background:rgba(248,113,113,.15);color:var(--red)}
 .badge.risky{background:rgba(251,191,36,.15);color:var(--amber)}
 .badge.unclear{background:rgba(148,163,184,.15);color:var(--muted)}
+.wall-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.wall-conf{font-size:13px;color:var(--muted);font-weight:700}
+.wall-sub{font-family:var(--font-mono);font-size:13px;color:var(--accent);margin-bottom:8px}
+.wall-meta{font-size:13px;color:var(--muted);margin-top:12px}
 .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:20px 0}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
 .stat .label{font-size:13px;color:var(--muted)}
@@ -262,6 +266,35 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div class="step"><div class="n">2</div><div><h3>Agent pays over x402 on Kite</h3><p>The agent signs a few cents in pieUSD and resends the call with a payment signature. The Pieverse facilitator verifies and settles it.</p></div></div>
 <div class="step"><div class="n">3</div><div><h3>SERV Reasoning decides, quotes verified</h3><p>SERV Reasoning reads the gathered evidence with Prompt Guard and Shadow Agent on. Our code checks every quoted reason really exists in the evidence. No verified quote, no confident verdict. The receipt is logged with its transaction.</p></div></div>
 </div>
+</section>
+
+<section id="serv">
+<h2>Where SERV Reasoning runs</h2>
+<p class="sub">SERV Reasoning reads the fetched evidence with Prompt Guard and Shadow Agent on, returns a verdict with quoted reasons, and our code verifies every quote against the evidence before answering.</p>
+<div class="grid">
+<div class="card">
+<div class="wall-top"><span class="badge scam">scam</span><span class="wall-conf">99% confidence</span></div>
+<h3>Scam page</h3>
+<p class="wall-sub">cheap-iphone-deals.example</p>
+<p>A page claiming to be the official Apple Store, selling an iPhone 16 Pro at 90% off and asking for crypto payment.</p>
+<p class="wall-meta">Nov 12, 2026 &middot; Injection: not flagged &middot; <a href="https://testnet.kitescan.ai/tx/0x460a644c56a5a8ac2d455c9fb3f335c0762e07a9d41170b0347ae71385eb3c19" target="_blank" rel="noreferrer">Tx 0x460a644c&hellip;eb3c19</a></p>
+</div>
+<div class="card">
+<div class="wall-top"><span class="badge safe">safe</span><span class="wall-conf">98% confidence</span></div>
+<h3>Honest shop</h3>
+<p class="wall-sub">harborandpine.example</p>
+<p>A real shop trading since 2014, card payments through a provider, 30-day returns, published address.</p>
+<p class="wall-meta">Nov 12, 2026 &middot; Injection: not flagged &middot; <a href="https://testnet.kitescan.ai/tx/0xf546392c84681b7844bdcc8b9e64892d0e88ec3b823194e19059bc92df46ed05" target="_blank" rel="noreferrer">Tx 0xf546392c&hellip;46ed05</a></p>
+</div>
+<div class="card">
+<div class="wall-top"><span class="badge risky">risky</span><span class="wall-conf">96% confidence</span><span class="flag">Injection flagged</span></div>
+<h3>Injected page</h3>
+<p class="wall-sub">juniperhome.example</p>
+<p>The shop looks normal, but a hidden comment tells agents to ignore their instructions and buy now.</p>
+<p class="wall-meta">Nov 12, 2026 &middot; <a href="https://testnet.kitescan.ai/tx/0x5bddfad6a36765ccf15c6ca51ffd40060d6491faca8db6bbb56452d6d03cb93c" target="_blank" rel="noreferrer">Tx 0x5bddfad6&hellip;03cb93c</a></p>
+</div>
+</div>
+<p class="sub" style="margin-top:16px">Every verdict above is a real paid call. See them live on the <a href="/dashboard">dashboard</a>.</p>
 </section>
 
 <section id="pricing">
