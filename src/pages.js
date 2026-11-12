@@ -22,6 +22,19 @@ nav{margin-left:auto;display:flex;gap:18px;font-size:14px}
 nav a{color:var(--muted)}
 nav a:hover{color:#fff;text-decoration:none}
 .hero{padding:44px 0 28px}
+.hero-grid{display:grid;gap:32px;align-items:start}
+@media(min-width:860px){.hero-grid{grid-template-columns:1.05fr .95fr}}
+.receipt{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;position:relative}
+.receipt-head{display:flex;justify-content:space-between;gap:12px;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.receipt-head .tag{color:var(--amber);font-weight:700}
+.stamp{position:absolute;top:38px;right:16px;border:3px solid var(--red);color:var(--red);font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.08em;padding:2px 10px;border-radius:6px;transform:rotate(-4deg);animation:stamp-in .25s ease-out both}
+@keyframes stamp-in{from{opacity:0;transform:rotate(-4deg) scale(1.4)}to{opacity:1;transform:rotate(-4deg) scale(1)}}
+.receipt .row{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.receipt .row:last-of-type{border-bottom:0}
+.receipt .k{color:var(--muted);flex:0 0 auto}
+.receipt .v{color:#fff;text-align:right;word-break:break-word;font-family:var(--font-mono);font-size:13px}
+.receipt .v .badge{font-family:var(--font-display)}
+.receipt-foot{font-size:13px;color:var(--muted);margin:12px 0 0}
 .eyebrow{color:var(--accent);font-weight:600;font-size:14px}
 .hero h1{font-family:var(--font-display);font-size:38px;line-height:1.08;margin:14px 0 16px;letter-spacing:-.03em;color:#fff}
 .hero p.lede{font-size:19px;color:var(--muted);max-width:640px;margin:0 0 24px}
@@ -33,9 +46,6 @@ nav a:hover{color:#fff;text-decoration:none}
 .pill{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);background:var(--panel)}
 .pill b{color:var(--green);font-weight:700}
 .pill .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}
-.price-chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px}
-.price-chip{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);background:var(--panel);font-family:var(--font-mono)}
-.price-chip b{color:var(--accent);font-weight:700}
 section{padding:28px 0}
 h2{font-family:var(--font-display);font-size:24px;letter-spacing:-.02em;color:#fff;margin:0 0 8px}
 .sub{color:var(--muted);margin:0 0 20px;max-width:640px}
@@ -162,51 +172,45 @@ function shell({ title, body }) {
 }
 
 function topNav(active) {
-  const homeLinks = active === "home" ? `<a href="#sample">Sample verdict</a><a href="#try">Try it</a><a href="#pricing">Pricing</a>` : "";
+  const homeLinks = active === "home" ? `<a href="#try">Try it</a><a href="#pricing">Pricing</a>` : "";
   return `<header class="top"><div class="wrap">
 <a class="logo" href="/">Verdict<span> API</span></a>
 <nav>${homeLinks}<a href="/dashboard"${active === "dashboard" ? ' style="color:#fff"' : ""}>Dashboard</a><a href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">GitHub</a><a href="https://www.openserv.ai/hackathon-2" target="_blank" rel="noreferrer">Hackathon</a></nav>
 </div></header>`;
 }
 
-export function landingPage({ prices, paymentsMode, network, asset, payTo, stats }) {
+export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
   const shortAddr = (a) => (a ? a.slice(0, 6) + "..." + a.slice(-4) : "not set");
-  const s = stats || { calls: 0, paidCalls: 0, earnedCents: 0 };
   const body = `${topNav("home")}
 <main class="wrap">
 <div class="hero">
+<div class="hero-grid">
+<div>
 <div class="eyebrow">OpenServ SERV Hackathon 02, Kite track</div>
 <h1>A paid second opinion<br>for AI agents.</h1>
 <p class="lede">Verdict is a pay-per-call API that lets AI agents check whether a link, claim, or token is a scam before they act on it. Reasoning by SERV, payments by x402 on Kite testnet.</p>
-<div class="price-chips"><span class="price-chip">Claim <b>${prices.claim}&cent;</b></span><span class="price-chip">Link <b>${prices.link}&cent;</b></span><span class="price-chip">Token <b>${prices.token}&cent;</b></span></div>
-<div class="btns"><a class="btn primary" href="#sample">See a sample verdict</a><a class="btn" href="#try">Try it</a><a class="btn" href="/dashboard">Dashboard</a></div>
+<div class="btns"><a class="btn primary" href="#try">Try it</a><a class="btn" href="/dashboard">Dashboard</a></div>
 <div class="status">
 <span class="pill"><span class="dot"></span><b>Live</b> &middot; payments ${paymentsMode}</span>
-<span class="pill">Paid calls <b>${s.paidCalls}</b></span>
-<span class="pill">Earned <b>$${(s.earnedCents / 100).toFixed(2)}</b></span>
 <span class="pill">Network ${network}</span>
 <span class="pill">Token ${shortAddr(asset)}</span>
 <span class="pill">Seller ${shortAddr(payTo)}</span>
 </div>
 </div>
-
-<section id="sample">
-<h2>See a sample verdict, no wallet needed</h2>
-<p class="sub">A real result from a paid 3&cent; link check. This is what an agent gets back.</p>
-<div class="vcard">
-<div class="vcard-top"><span class="subject">Nike Official Clearance, a scam fixture page</span><span class="badge scam">scam</span></div>
-<p class="vsummary">The page exhibits multiple scam indicators: brand/domain mismatch, unrealistic discount and urgency, and crypto payment to a personal wallet.</p>
-<div class="conf"><span>Confidence 99%</span><span class="bar"><i style="width:99%;background:#ef4444"></i></span></div>
-<ul>
-<li><b>Unrealistic discount advertised for a branded store.</b><blockquote>&ldquo;Nike Official Store &mdash; 80% OFF EVERYTHING&rdquo;</blockquote></li>
-<li><b>Brand/domain mismatch is present.</b><blockquote>&ldquo;Unrelated outlet domain: nike-super-deals.example&rdquo;</blockquote></li>
-<li><b>Payment is requested in crypto to a personal wallet.</b><blockquote>&ldquo;Payment accepted only in USDT. Send USDT directly to our personal wallet: 0x71cA00000000000000000000000000000000beef.&rdquo;</blockquote></li>
-</ul>
-<div class="vmeta"><span>Link check, 3&cent; paid</span><span>Model gpt-5.4-mini-2026-03-17</span><a href="https://testnet.kitescan.ai/tx/0x460a644c56a5a8ac2d455c9fb3f335c0762e07a9d41170b0347ae71385eb3c19" target="_blank" rel="noreferrer">View tx 0x460a644c...</a><a href="/dashboard">See it on the dashboard</a></div>
+<aside class="receipt" aria-label="Real paid verdict receipt">
+<div class="receipt-head"><span>Verdict receipt</span><span class="tag">Real paid verdict</span></div>
+<div class="stamp" aria-hidden="true">Scam</div>
+<div class="row" style="margin-top:52px"><span class="k">Subject</span><span class="v">cheap-iphone-deals.example</span></div>
+<div class="row"><span class="k">Verdict</span><span class="v"><span class="badge scam">scam</span></span></div>
+<div class="row"><span class="k">Confidence</span><span class="v">99%</span></div>
+<div class="row"><span class="k">Evidence</span><span class="v">&ldquo;90% off iPhone 16 Pro — today only!&rdquo;</span></div>
+<div class="row"><span class="k">Injection</span><span class="v">not flagged</span></div>
+<div class="row"><span class="k">Paid</span><span class="v">3&cent; pieUSD</span></div>
+<div class="row"><span class="k">Tx</span><span class="v"><a href="https://testnet.kitescan.ai/tx/0x460a644c56a5a8ac2d455c9fb3f335c0762e07a9d41170b0347ae71385eb3c19" target="_blank" rel="noreferrer">0x460a644c&hellip;eb3c19</a></span></div>
+<p class="receipt-foot">A real paid check from the demo agent. See it on the <a href="/dashboard">dashboard</a>.</p>
+</aside>
 </div>
-<p class="sub" style="margin-top:12px">Every quote above was checked against the page before the verdict was returned.</p>
-</section>
-
+</div>
 
 <section id="try">
 <h2>Try it: read the payment terms, free</h2>
@@ -750,7 +754,7 @@ load("link");
   });
 })();
 </script>`;
-  return shell({ title: "Verdict API — a paid second opinion for AI agents", body });
+  return shell({ title: "Verdict API - a paid second opinion for AI agents", body });
 }
 
 export function dashboardPage() {
@@ -976,5 +980,5 @@ setDashState("loading", {});
 refresh();
 timer = setInterval(refresh, 3000);
 </script>`;
-  return shell({ title: "Verdict API dashboard — live earnings", body });
+  return shell({ title: "Verdict API dashboard - live earnings", body });
 }

@@ -33,15 +33,12 @@ app.get("/", (req, res) => {
     dashboard: "/dashboard",
   };
   if ((req.headers.accept || "").includes("text/html")) {
-    const receipts = readReceipts();
-    const paid = receipts.filter((x) => x.payment_mode === "x402");
     return res.type("html").send(landingPage({
       prices: PRICES,
       paymentsMode: config.payments.mode,
       network: config.payments.network,
       asset: config.payments.asset,
       payTo: config.payments.payTo,
-      stats: { calls: receipts.length, paidCalls: paid.length, earnedCents: paid.reduce((n, x) => n + (x.paid_cents || 0), 0) },
     }));
   }
   res.json(info);
