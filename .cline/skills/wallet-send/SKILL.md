@@ -1,0 +1,312 @@
+---
+name: wallet-send
+description: >-
+  Check a multichain wallet balance, send crypto on a specific chain
+  (base/polygon/avalanche/tempo/solana/robinhood/arc on mainnet — on arc,
+  USDC also pays gas; the dev environment serves arc as Arc testnet only, with
+  no routing, and its faucet cannot fund arc), look up per-chain wallet addresses, or get test tokens
+  from the faucet (staging/testnet only). Proactively invoke for any task
+  involving token transfers, balance inquiries, "how much do I have?",
+  "what's my address?", or funding a wallet on testnet. No spending session
+  required -- works directly with the user's wallet. Sends require a passkey
+  approval in the browser.
+user-invocable: true
+allowed-tools:
+  - "Bash(kpass wallet *)"
+  - "Bash(kpass faucet *)"
+---
+
+# Wallet Send
+
+**Prerequisite**: Before using any Passport skill, check if `kpass` is installed by running `command -v kpass`. If it returns nothing, invoke the `passport-setup` skill first to install the CLI.
+
+Check a wallet balance across chains, send tokens **on a specific chain**, list per-chain wallet addresses, and request test tokens from the faucet. These commands use the user's own JWT (not an agent session) and do NOT require a spending session.
+
+Kite is **multichain**. Every send targets one chain — on mainnet one of **`base`**, **`polygon`**, **`avalanche`**, **`tempo`**, **`solana`**, **`robinhood`**, or **`arc`** (Arc mainnet, chainId 5042) — and `--chain` is **required** (there is no default; `kite` is rejected). Balances are aggregated across all chains the environment serves. **The chain set is environment-specific**: the backend only serves the chains in its asset registry, and the **dev environment serves `arc` as Arc testnet (chainId 5042002, Circle USDC) and nothing else** — no cross-chain routing on dev, and Kite's faucet cannot fund arc (Passport-deployment restrictions, not Arc limitations). A wallet send normally requires a **passkey approval in the browser** (step-up), so `wallet send` hands you an approval URL and you poll the result with `wallet send-status`.
+
+> **Reference files** (read when you need exact detail):
+> - `@references/commands.md` — full per-command flag tables, validation rules, and every JSON shape.
+> - `@references/examples.md` — end-to-end worked examples (send + approval, balance, address, faucet).
+
+## When to Use This Skill
+
+- The user asks to check their wallet balance or "how much do I have?"
+- The user asks to send or transfer tokens to an address.
+- The user asks "what's my wallet address?" or needs an address to receive funds.
+- The user asks for test tokens, wants to "top up" on testnet, or needs to fund a wallet for development. **Faucet is staging/testnet only** — the CLI blocks it on production automatically.
+- After any balance check on a dev/testnet chain, when the main stablecoin balance there is `0` or under `1` — proactively suggest the faucet even if the user only asked for wallet info (see "Proactively Suggest the Faucet on a Low Testnet Balance" below). An **address-only** check carries no balance data (`wallet address` returns `wallets[]` — chain, vm_family, address — nothing else), so this trigger needs an explicit `wallet balance` lookup first; it is not something an address response can answer on its own.
+
+## When NOT to Use This Skill
+
+- To pay for a service or access a paid API, use **`x402-execute`** (which requires a spending session), set up via **`request-session`**.
+
+## Prerequisites
+
+**All commands here require the user to be logged in** — `wallet balance`, `wallet send`, `wallet send-status`, `wallet address`, **and `faucet drop`** (the faucet is no longer anonymous). If a command returns exit code 3 with "Not logged in", use the **`authenticate-user`** skill first, then retry.
+
+No agent registration or spending session is required. Wallet commands operate with the user's JWT directly.
+
+## Chains & Assets
+
+| Chain | VM family | Assets | Notes |
+|-------|-----------|--------|-------|
+| `base` | `evm` (`0x…`) | USDC | base + polygon + avalanche + tempo + robinhood + arc share **one EVM address** |
+| `polygon` | `evm` (`0x…`) | USDC | native Circle USDC on Polygon PoS mainnet; gas is POL and is sponsored |
+| `avalanche` | `evm` (`0x…`) | USDC | native Circle USDC on Avalanche C-Chain mainnet; gas is AVAX and is sponsored |
+| `tempo` | `evm` (`0x…`) | USDC | physically USDC.e (surfaced as USDC); ~0.01 USDC is reserved for gas — the `amount` the CLI shows is already the spendable figure |
+| `solana` | `solana` (base58) | USDC, PYUSD | separate Solana address; optional (omitted if the user has no Solana wallet) |
+| `robinhood` | `evm` (`0x…`) | USDG | **USDG only**; same EVM address as base/polygon/avalanche/tempo/arc; no faucet |
+| `arc` | `evm` (`0x…`) | USDC | Arc **mainnet** (chainId 5042) on staging/prod; Arc **testnet** (chainId 5042002) on dev, where it is the a2a escrow settlement chain. Circle USDC **is** Arc's gas token, so Passport does **not** sponsor Arc gas: ~0.02 USDC is reserved for fees on every send — the `amount` the CLI shows is already the spendable figure. No faucet (on dev, use Circle's faucet — see below). |
+
+The mainnet rows above are what staging/prod serve; **on dev, `arc` (Arc testnet) is the ONLY chain** — never offer the mainnet chains there.
+
+**Use `USDC` on base/polygon/avalanche/tempo/solana/arc, `PYUSD` on solana, and `USDG` on robinhood.** Never imply that USDG is supported on base/polygon/avalanche/tempo or that USDC is supported on robinhood. `KITE` is not part of the multichain surface — do not suggest it as a send/receive asset even though the CLI's `--asset` help still lists it as an example.
+
+**Passport sponsors gas on every supported chain except Arc**, where gas is paid in the same USDC the user holds (a ~0.02 USDC reserve is kept per send). Users never need to deposit ETH, POL, AVAX, SOL, or another native gas token. Whenever you share a receive address, state the supported receive asset(s) and the gas-sponsorship warning **before** the address so crypto-native users do not fund gas out of habit.
+
+## Defaults (Do Not Ask the User Unless They Specify Otherwise)
+
+| Setting | Default value | Override |
+|---------|--------------|---------|
+| Output format | `--output json` | Always use JSON output. Never omit this flag. |
+| Chain | Ask the user | **Required for `wallet send`.** There is no default. If the user did not say which chain, ask (e.g. "base, polygon, avalanche, tempo, solana, robinhood, or arc?"). On dev the only chain is `arc` (Arc testnet). |
+| Asset | Ask the user | There is no default. You must know which token to send (e.g. `USDC`, `PYUSD`). |
+| Base URL | Omit (uses built-in default) | Only pass `--base-url` if the user explicitly provides a custom backend URL. |
+
+## Display Cards — MANDATORY
+
+**CRITICAL: You MUST display the formatted status cards below after every major step. This is NOT optional. Never skip, summarize, or replace these cards with plain text. The exact horizontal-rule format must be used every time.**
+
+---
+
+## Commands at a Glance
+
+| Command | Purpose | Auth | Detail |
+|---------|---------|------|--------|
+| `kpass wallet balance --output json` | Aggregated multichain balance | login | `@references/commands.md` |
+| `kpass wallet send --chain <c> --to <addr> --amount <n> --asset <sym> --output json` | Transfer on one chain (passkey step-up) | login | `@references/commands.md` |
+| `kpass wallet send-status --request-id <id> --wait --output json` | Poll a pending send approval | login | `@references/commands.md` |
+| `kpass wallet address [--chain <c>] --output json` | Per-chain receive addresses | login | `@references/commands.md` |
+| `kpass faucet drop --recipient <addr> --token <sym> --output json` | Test tokens (testnet only) | login | `@references/commands.md` |
+
+`--chain` accepts `base`, `polygon`, `avalanche`, `tempo`, `solana`, `robinhood`, or `arc` (the backend rejects chains its environment does not serve). `--to`/`--recipient` is validated **client-side per chain**: an EVM address (`0x` + 40 hex; EIP-55 checksum enforced when mixed-case) for base/polygon/avalanche/tempo/robinhood/arc, a base58 32-byte public key for solana. A malformed address fails with exit 2 before any network call.
+
+---
+
+## The Wallet Send Flow (passkey step-up — the normal path)
+
+A wallet send requires a passkey ceremony the CLI cannot perform, so the flow is **two steps**:
+
+1. **Run `wallet send`.** The response is almost always `status: "human_action_required"` (exit code **0** — this is NOT an error). It contains an `approval_url`, a `request_id`, and a `next_command`.
+2. **Show the `approval_url` to the user verbatim** (display the Approval Required card), then **run the `next_command`** (`wallet send-status --request-id <id> --wait --output json`) to poll until the user approves in the browser.
+
+> **Rollback path:** if the backend has step-up disabled, `wallet send` instead returns `status: "success"` directly with a `transaction_hash` — skip straight to the Transfer Complete card.
+>
+> **Judging send-status success:** the success envelope's top-level `status` is `"success"` and it carries a `transaction_hash`. (The CLI's internal `"sent"` state is overwritten to `"success"` in the envelope — judge success by `status: "success"` **plus** the presence of `transaction_hash`, never by a `"sent"` string.)
+
+### Step 1 — `wallet send` returns an approval handoff
+
+```json
+{
+  "action": "approve_wallet_send",
+  "request_id": "req_abc123",
+  "approval_url": "https://passport.dev.gokite.ai/approve/req_abc123",
+  "chain": "base",
+  "to": "0x9876fedc5432ba10...",
+  "asset": "USDC",
+  "amount": "25",
+  "_version": "1",
+  "status": "human_action_required",
+  "hint": "Wallet send needs passkey approval. Show this approval URL to the user verbatim: https://passport.dev.gokite.ai/approve/req_abc123",
+  "next_command": "kpass wallet send-status --request-id req_abc123 --wait --output json"
+}
+```
+
+**MANDATORY card (show before polling):**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛡️ Wallet Send — Approval Required
+
+A transfer needs your passkey approval:
+
+🌐 {approval_url}
+
+📤 Send:        {amount} {asset}
+⛓️  Chain:       {chain}
+📬 To:          {to}
+📋 Request ID:  {request_id}
+
+👆 Open the link and approve with your passkey.
+⏳ I'll wait automatically...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+| Placeholder | Source |
+|---|---|
+| `{approval_url}` | response field `approval_url` |
+| `{amount}` | response field `amount` |
+| `{asset}` | response field `asset` |
+| `{chain}` | response field `chain` |
+| `{to}` | response field `to` |
+| `{request_id}` | response field `request_id` |
+
+Optionally open the URL in the user's browser (`open`/`xdg-open`/`start "{approval_url}"`), then **immediately** run the `next_command`.
+
+### Step 2 — `wallet send-status --wait` resolves the send
+
+```json
+{
+  "request_id": "req_abc123",
+  "transaction_hash": "0xdeadbeef12345678...",
+  "_version": "1",
+  "status": "success",
+  "hint": "Wallet send completed.",
+  "next_command": ""
+}
+```
+
+**MANDATORY card (show on success):**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💸 Transfer Complete
+
+📤 Sent:     {amount} {asset}
+⛓️  Chain:    {chain}
+📬 To:       {to}
+🧾 Tx Hash:  {transaction_hash}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+| Placeholder | Source |
+|---|---|
+| `{amount}`, `{asset}`, `{chain}`, `{to}` | carry forward from the **Step 1** `wallet send` response (send-status does not echo them) |
+| `{transaction_hash}` | `wallet send-status` response field `transaction_hash` (or the direct-send response on the rollback path) |
+
+If `send-status` returns `failed` (exit 1), `rejected` (exit 3), or `expired` (exit 3), tell the user the transfer did not go through and offer to start a new send. See `@references/commands.md` for every state.
+
+---
+
+## `wallet balance`, `wallet address` — display cards
+
+After a successful **balance** check, present the aggregate and per-chain breakdown:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 Wallet Balance — ≈ ${total_usd_approx}
+
+{asset}   {total}
+   base     {amount}
+   polygon    {amount}
+   avalanche  {amount}
+   tempo    {amount}
+   solana   {amount}
+   robinhood {amount}
+   arc      {amount}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Repeat the asset block for each entry in `assets[]`; list one line per entry in that asset's `chains[]` — render exactly what the API returns (on dev that is a single `arc` row). If any `partial` field is `true`, append "(partial — one chain's balance could not be read)".
+
+After a successful **address** lookup:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📬 Wallet Addresses
+
+⚠️ Gas is sponsored (on Arc, USDC itself pays gas). Do not send native gas tokens.
+
+Supported receive assets:
+base / polygon / avalanche / tempo   USDC only — do not send native gas tokens
+robinhood      USDG only — do not send ETH
+solana         USDC or PYUSD only — do not send SOL
+arc            USDC only — USDC is also Arc's gas token
+
+base     {address}
+polygon    {address}
+avalanche  {address}
+tempo    {address}
+robinhood {address}
+arc      {address}
+solana   {address}
+
+base + polygon + avalanche + tempo + robinhood + arc share one EVM address.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+The safety notice and supported-assets block are mandatory and must appear **before** the address rows. Show only guidance and address rows for chains present in `wallets[]`. Show the shared-address note only when two chains report the same address. The same EVM address does not imply cross-chain asset support.
+
+## Proactively Suggest the Faucet on a Low Testnet Balance
+
+After displaying the balance card, check whether a proactive faucet suggestion applies — do this even if the user only asked "what's my wallet info" and did not ask about funding. **If the check in hand is an address lookup, not a balance one, run `kpass wallet balance --output json` first** — `wallet address` carries no `amount` data at all (its rows are just `{ chain, vm_family, address }`), so there is nothing to evaluate the threshold against until a real balance response exists. Never fabricate or assume a balance from an address response.
+
+**When to suggest:** the environment is dev/testnet (recognized by `arc` being the **only** row in `chains[]` — dev serves `arc` as Arc testnet and nothing else; staging/prod also return an `arc` row, for Arc **mainnet**, alongside the other chains, so an `arc` row on its own does not mean dev) or another testnet/staging chain, **and** the main stablecoin's balance on that chain (`USDC`, the `amount` field of its `chains[]` row) is `0` or less than `1`. Never suggest the faucet against a mainnet/production balance.
+
+**What to suggest:**
+- **Any chain other than `arc` or `robinhood`:** offer to run `kpass faucet drop --recipient <address> --token USDC --output json` (see the `faucet drop` card below). **`faucet drop` takes no `--chain` flag** — it drops on a single backend-determined testnet (reported only informationally as `chain_id` in its response), not necessarily the same network as the chain whose balance was low, since the recipient address is shared across base/polygon/avalanche/tempo/robinhood. Don't claim the drop replenishes that specific chain; after it completes, re-run `wallet balance` and report what actually changed rather than assuming.
+- **`robinhood` specifically:** do NOT offer `kpass faucet drop` — robinhood is **USDG only** and, per `references/commands.md`, "is not a faucet-supported chain." There is no faucet path for it; say so if asked.
+- **`arc` specifically (dev only — never on Arc mainnet):** do NOT offer `kpass faucet drop` — Passport's own faucet cannot fund Arc (see the `arc` row in **Chains & Assets** above). Instead tell the user:
+
+  > Your arc (Arc testnet) USDC balance is `<amount>`. Kite's own `faucet drop` cannot fund Arc, so get free test USDC directly from Circle:
+  > 1. Open https://faucet.circle.com/
+  > 2. Select token **USDC**
+  > 3. Select the **Arc** testnet network
+  > 4. Paste this wallet address: `<address from kpass wallet address --chain arc --output json>`
+  > 5. Submit — Circle's faucet typically drops **~20 USDC** per request, not a fixed amount to promise precisely — then re-run `kpass wallet balance --output json` to confirm it arrived.
+
+## `faucet drop` — display card
+
+The faucet is **testnet only** (the CLI blocks production automatically) and now **requires login**. After a successful drop:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🪂 Tokens Received!
+
+💰 Amount:     {amount} {asset}
+📬 Dropped to: {recipient_address}
+🧾 Tx Hash:    {transaction_hash}
+
+Test tokens only — your wallet is funded for development.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+## Error Handling
+
+| Exit Code | Meaning | Error Message Pattern | Recovery Action |
+|-----------|---------|----------------------|-----------------|
+| 0 | Success **or** `human_action_required` | `status: "success"` / `status: "human_action_required"` | For `human_action_required`, show the approval URL and poll with `send-status`. It is NOT an error. |
+| 1 | Network error / send failed | `network error: ...`; `send-status` returns `status: "error"` with `error_code` | A client-side network error while polling `send-status` is safe to retry — re-run the same status check, do not create a new send (the original request may still resolve). Only start a new send once `send-status` itself returns a confirmed terminal `error`/`failed` state — that means the backend has already determined the transfer did not go through. |
+| 2 | Usage / validation error | `Missing --chain flag`, `--chain must be one of base\|polygon\|avalanche\|tempo\|solana\|robinhood\|arc`, `--to is not a valid <chain> address: ...`, `--amount must be a positive number`, `Missing --recipient flag`, `Missing --token flag` | Fix the flags. `--chain` is required; the address must match the chain. |
+| 3 | Auth error | `Not logged in. Run 'kpass login init ...'`; `send-status` `rejected`/`expired`/`--wait` timeout | Use **`authenticate-user`** to log in, then retry. For a rejected/expired send, start a new one. |
+| 4 | Not found | `not found` | Check the request ID or recipient address. |
+| 5 | Rate limited | `rate limit` | Wait ~30 seconds and retry. |
+| 6 | Insufficient balance | `error_code: "insufficient_balance"` | The wallet's available balance is below the amount. Check `wallet balance`; on testnet use `faucet drop` to top up, otherwise fund the wallet. |
+
+See `@references/commands.md` for the exact error envelope of every command and state.
+
+---
+
+## Commands That DO NOT Exist
+
+Do NOT attempt any of the following — they will fail:
+
+- `kpass wallet` (no sub-command) — use `wallet balance`, `wallet send`, `wallet send-status`, or `wallet address`.
+- `kpass wallet send` **without `--chain`** — `--chain` is required (`base|polygon|avalanche|tempo|solana|robinhood|arc`).
+- `kpass wallet send --chain kite` — `kite` is not a supported chain.
+- `kpass wallet transfer` / `kpass send` / `kpass balance` — use `wallet send` / `wallet balance`.
+- `kpass wallet send --recipient` — the flag is `--to`. `--token` / `--currency` — the flag is `--asset`.
+- `kpass wallet fund` / `wallet deposit` / `wallet withdraw` — do not exist; use `faucet drop` for test tokens.
+- `kpass faucet` (no sub-command) — use `faucet drop`. `faucet drop --to` — the flag is `--recipient`. `faucet drop --asset` — the flag is `--token`. `faucet drop --amount` — the faucet determines the amount.
+- Any command with `--json` — the correct flag is `--output json` (two separate tokens).
+
+---
+
+## Cross-Skill References
+
+- **Prerequisite (all commands):** the user must be logged in. Use **`authenticate-user`**.
+- **For paid API access** (not direct transfers): use **`request-session`** then **`x402-execute`**.
+- **For diagnostics:** to inspect registered agents and sessions, use **`manage-agents`**.
+- **After a transfer or faucet drop:** suggest verifying it in history with the **`activity`** skill.

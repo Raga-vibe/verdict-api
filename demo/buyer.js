@@ -14,12 +14,13 @@
 // Paid run against the live API:
 //   VERDICT_URL=https://verdict-api-t50q.onrender.com \
 //   SCAM_URL=https://<public-scam-page> HONEST_URL=https://<public-honest-page> \
+//   INJECTED_URL=https://<public-injected-page> \
 //   BUYER_PRIVATE_KEY=<funded testnet key> npm run demo
 // The key is only needed when the server answers 402. With
 // PAYMENTS_MODE=off the demo runs without a key. Never commit the key
 // or paste it into chat; keep it in the ignored local .env file.
 //
-// Usage: node demo/buyer.js [scam-url] [honest-url]
+// Usage: node demo/buyer.js [scam-url] [honest-url] [injected-url]
 import "dotenv/config";
 import { randomBytes } from "node:crypto";
 import { privateKeyToAccount } from "viem/accounts";
@@ -37,9 +38,11 @@ const SCAM_URL = process.argv[2] || process.env.SCAM_URL
   || (isLocal ? "http://localhost:4000/scam-1.html" : "");
 const HONEST_URL = process.argv[3] || process.env.HONEST_URL
   || (isLocal ? "http://localhost:4000/honest-1.html" : "");
-if (!SCAM_URL || !HONEST_URL) {
-  console.error("Usage: node demo/buyer.js [scam-url] [honest-url]");
-  console.error("Against the live API, pass two public page URLs (the server cannot fetch localhost).");
+const INJECTED_URL = process.argv[4] || process.env.INJECTED_URL
+  || (isLocal ? "http://localhost:4000/inject-1.html" : "");
+if (!SCAM_URL || !HONEST_URL || !INJECTED_URL) {
+  console.error("Usage: node demo/buyer.js [scam-url] [honest-url] [injected-url]");
+  console.error("Against the live API, pass three public page URLs (the server cannot fetch localhost).");
   process.exit(1);
 }
 
@@ -186,12 +189,19 @@ const proceeded = demoDecision(honest.verdict) === "proceed";
 if (proceeded) console.log("Decision: PROCEEDING to checkout at the honest shop (demo only, no real purchase).");
 else console.log(`Decision: NOT proceeding. Honest shop came back "${honest.verdict}", so the agent stops.`);
 
+const injected = await checkPage(INJECTED_URL, "Check 3: a page with hidden instruction-like text");
+printVerdict(injected);
+console.log(`Hidden instruction-like text detected: ${injected.injection_detected ? "yes" : "no"}`);
+console.log("Decision: REFUSING to follow any instructions embedded in page content.");
+
 console.log("\n--- Demo summary ---");
 console.log(JSON.stringify({
   scam_page: { url: SCAM_URL, verdict: scam.verdict, confidence: scam.confidence, paid: scam.paid, tx: scam.txHash },
   honest_page: { url: HONEST_URL, verdict: honest.verdict, confidence: honest.confidence, paid: honest.paid, tx: honest.txHash },
+  injected_page: { url: INJECTED_URL, verdict: injected.verdict, confidence: injected.confidence, injection_detected: injected.injection_detected, paid: injected.paid, tx: injected.txHash },
   refused_scam: refused,
   proceeded_honest: proceeded,
+  refused_hidden_instructions: true,
 }, null, 2));
 
 if (!refused || !proceeded) {
