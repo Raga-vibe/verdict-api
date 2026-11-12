@@ -211,13 +211,14 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div class="row"><span class="k">Injection</span><span class="v">not flagged</span></div>
 <div class="row"><span class="k">Paid</span><span class="v">3&cent; pieUSD</span></div>
 <div class="row"><span class="k">Tx</span><span class="v"><a href="https://testnet.kitescan.ai/tx/0x460a644c56a5a8ac2d455c9fb3f335c0762e07a9d41170b0347ae71385eb3c19" target="_blank" rel="noreferrer">0x460a644c&hellip;eb3c19</a></span></div>
-<p class="receipt-foot">A real paid check from the demo agent. See it on the <a href="/dashboard">dashboard</a>.</p>
+<p class="receipt-foot">Demo: a shopping agent about to buy sneakers asked Verdict first. This is the real paid answer. See it on the <a href="/dashboard">dashboard</a>.</p>
 </aside>
 </div>
 </div>
 
 <section id="try">
 <h2>Try it: read the payment terms, free</h2>
+<p class="sub">New here? Pick Link, see the 3 cent terms, then connect a wallet and pay to get a live verdict.</p>
 <p class="sub">Pick an endpoint to see exactly what an agent is asked to pay, before any payment happens.</p>
 <div class="tabs">
 <button data-kind="claim">Claim &middot; ${prices.claim}&cent;</button>
@@ -270,6 +271,7 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 
 <section id="serv">
 <h2>Where SERV Reasoning runs</h2>
+<p class="sub">One demo run, three pages, three verdicts.</p>
 <p class="sub">SERV Reasoning reads the fetched evidence with Prompt Guard and Shadow Agent on, returns a verdict with quoted reasons, and our code verifies every quote against the evidence before answering.</p>
 <div class="grid">
 <div class="card">
