@@ -14,7 +14,7 @@
 // widget `data-wt-state`).
 
 // ---------------------------------------------------------------------------
-// Payment lifecycle: one verdict call, x402 v2 exact on Kite testnet.
+// Payment lifecycle: one verdict call, x402 v2 exact on Celo.
 // Every payer moves through the same states: an agent over HTTP, the demo
 // agent, and the browser wallet widget. The server is the authority; the
 // widget and demo mirror these states client-side.
@@ -22,7 +22,7 @@
 export const PAYMENT_STATES = {
   UNPAID: { code: "PAYMENT_REQUIRED", http: 402, terminal: false, description: "No payment attached yet. The server answers with the x402 terms." },
   SIGNED: { code: null, http: null, terminal: false, description: "A PAYMENT-SIGNATURE header is attached; the facilitator will verify it." },
-  VERIFYING: { code: null, http: null, terminal: false, description: "The Pieverse facilitator is verifying the signed authorization." },
+  VERIFYING: { code: null, http: null, terminal: false, description: "The Celo x402 facilitator is verifying the signed authorization." },
   VERIFY_FAILED: { code: "PAYMENT_FAILED", http: 402, terminal: true, description: "The facilitator rejected the payment. No verdict is returned." },
   SETTLING: { code: null, http: null, terminal: false, description: "Verification passed; the facilitator is settling the transfer on chain." },
   SETTLE_FAILED: { code: "PAYMENT_FAILED", http: 402, terminal: true, description: "Verification passed but settlement failed. No verdict is returned." },
@@ -50,7 +50,7 @@ export function paymentCanTransition(from, to) {
 // the next action. Unknown reasons fall back to the generic hint, which is
 // the message the server used for every failure before this table existed.
 export const VERIFY_REASON_GUIDANCE = {
-  insufficient_funds: "Your pieUSD balance is too low for this check. Get free testnet pieUSD from the Kite Passport sandbox (kpass sandbox on, then kpass faucet drop), then try again.",
+  insufficient_funds: "Your USDC balance is too low for this check. Get free testnet USDC from the Celo faucet, then try again.",
   invalid_exact_evm_payload_signature: "The signature does not match the payment authorization. Sign again from the same wallet without editing the payment details.",
   invalid_exact_evm_payload_authorization_valid_before: "The payment authorization has expired. Ask for fresh terms and sign again.",
   invalid_exact_evm_payload_authorization_valid_after: "The payment authorization is not valid yet. Ask for fresh terms and sign again.",
@@ -62,7 +62,7 @@ export const VERIFY_REASON_GUIDANCE = {
 export function paymentRequiredBody({ kind, cents, network, base, terms }) {
   return {
     ...terms,
-    error: `Payment required: this ${kind} check costs ${cents} cents in pieUSD on Kite testnet (${network}). Pay with x402 and resend with a PAYMENT-SIGNATURE header, or read the free terms at GET ${base}/verdict/${kind}/terms.`,
+    error: `Payment required: this ${kind} check costs ${cents} cents in USDC on Celo (${network}; cNGN also accepted on mainnet). Pay with x402 and resend with a PAYMENT-SIGNATURE header, or read the free terms at GET ${base}/verdict/${kind}/terms.`,
     code: "PAYMENT_REQUIRED",
   };
 }
@@ -83,7 +83,7 @@ export function paymentFailedBody({ verifyResult }) {
   const reason = verifyResult?.invalidReason || verifyResult?.error || null;
   if (!reason) {
     return {
-      error: "Payment verification failed. Check your pieUSD balance on Kite testnet and that the payment matches the terms, then try again.",
+      error: "Payment verification failed. Check your USDC balance on Celo and that the payment matches the terms, then try again.",
       code: "PAYMENT_FAILED",
     };
   }
@@ -91,7 +91,7 @@ export function paymentFailedBody({ verifyResult }) {
   return {
     error: guidance
       ? `Payment verification failed. The facilitator said: ${reason}. ${guidance}`
-      : `Payment verification failed. The facilitator said: ${reason}. Check your pieUSD balance on Kite testnet and that the payment matches the terms, then try again.`,
+      : `Payment verification failed. The facilitator said: ${reason}. Check your USDC balance on Celo and that the payment matches the terms, then try again.`,
     code: "PAYMENT_FAILED",
     reason,
   };
@@ -167,23 +167,23 @@ export const VERDICT_STAGE_ORDER = [
 // table is embedded as JSON into the landing page by src/pages.js, so the
 // words the visitor sees come from this one place. Wording matches what the
 // widget showed before, except `balance_low` is now also used when a quiet
-// balance refresh after a check finds too little pieUSD, instead of the
+// balance refresh after a check finds too little USDC, instead of the
 // check button silently going dead.
 // ---------------------------------------------------------------------------
 export const WIDGET_STATES = {
   no_wallet: { message: "No wallet found in this browser. Install MetaMask, or open this page inside your wallet app's browser (for example MetaMask on your phone). The check below stays off until a wallet is present." },
   terms_loading: { message: "Loading the payment terms..." },
   terms_failed: { message: "Could not load the payment terms. Is the API awake? Reload the page to try again." },
-  wallet_found: { message: "Wallet found. Connect it to check a link for {cents}c in testnet pieUSD." },
+  wallet_found: { message: "Wallet found. Connect it to check a link for {cents}c in testnet USDC." },
   connecting: { message: "Waiting for your wallet..." },
   not_connected: { message: "Wallet not connected." },
   wallet_disconnected: { message: "Wallet disconnected. Connect again to try a check." },
-  balance_low: { message: "Your pieUSD balance is too low for a {cents}c check. Get free testnet pieUSD from the faucet, then check your balance again." },
-  ready: { message: "Ready. Checking costs {cents}c in pieUSD, paid from {address}." },
+  balance_low: { message: "Your USDC balance is too low for a {cents}c check. Get free testnet USDC from the faucet, then check your balance again." },
+  ready: { message: "Ready. Checking costs {cents}c in USDC, paid from {address}." },
   asking_terms: { message: "Asking Verdict for the payment terms..." },
-  awaiting_signature: { message: "Payment: {amount} pieUSD ({cents}c). Approve the signature in your wallet..." },
+  awaiting_signature: { message: "Payment: {amount} USDC ({cents}c). Approve the signature in your wallet..." },
   sending: { message: "Signature approved. Sending the paid check..." },
-  done_paid: { message: "Done. Verdict paid and settled on Kite testnet." },
+  done_paid: { message: "Done. Verdict paid and settled on Celo." },
   done_free: { message: "Done. No payment was needed for this call." },
   incomplete: { message: "Check did not complete. Your wallet was not charged unless a verdict is shown below." },
 };

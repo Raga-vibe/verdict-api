@@ -190,9 +190,9 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div class="hero">
 <div class="hero-grid">
 <div>
-<div class="eyebrow">OpenServ SERV Hackathon 02, Kite track</div>
+<div class="eyebrow">Loops House Agents Open for Business, Celo</div>
 <h1>A paid second opinion<br>for AI agents.</h1>
-<p class="lede">Verdict is a pay-per-call API that lets AI agents check whether a link, claim, or token is a scam before they act on it. Reasoning by SERV, payments by x402 on Kite testnet.</p>
+<p class="lede">Verdict is a pay-per-call API that lets AI agents check whether a link, claim, or token is a scam before they act on it. Reasoning by SERV, payments by x402 on Celo.</p>
 <div class="btns"><a class="btn primary" href="#try">Try it</a><a class="btn" href="/dashboard">Dashboard</a></div>
 <div class="status">
 <span class="pill"><span class="dot"></span><b>Live</b> &middot; payments ${paymentsMode}</span>
@@ -234,7 +234,7 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 
 <section>
 <h2>Try it for real, from this page</h2>
-<p class="sub">No terminal, no PC needed. Connect a wallet on Kite testnet, pay 3&cent; in testnet pieUSD, and get a real verdict for a link.</p>
+<p class="sub">No terminal, no PC needed. Connect a wallet on Celo Sepolia, pay 3&cent; in testnet USDC, and get a real verdict for a link.</p>
 <div class="card" id="wt-card">
 <p class="wt-status" id="wt-status">Checking for a wallet...</p>
 <div class="wt-row" id="wt-actions"></div>
@@ -242,7 +242,7 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div class="kv" style="margin-bottom:12px">
 <div class="row"><div class="k">Wallet</div><div class="v" id="wt-addr">-</div></div>
 <div class="row"><div class="k">Network</div><div class="v" id="wt-net">-</div></div>
-<div class="row"><div class="k">pieUSD</div><div class="v" id="wt-bal">-</div></div>
+<div class="row"><div class="k">USDC</div><div class="v" id="wt-bal">-</div></div>
 </div>
 <div class="wt-presets" role="group" aria-label="Sample pages">
 <button type="button" class="chip" data-preset="scam">Scam sample</button>
@@ -251,12 +251,12 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <label class="wt-label" for="wt-url">Page to check</label>
 <input class="wt-input" id="wt-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" value="https://raw.githubusercontent.com/Raga-vibe/verdict-api/master/tests/fixtures/scam-1.html">
 <div class="wt-row"><button type="button" class="btn primary" id="wt-check" disabled>Check this link &middot; 3&cent;</button></div>
-<p class="wt-note">You sign one payment of 3&cent; in your wallet. Nothing is charged until you approve the signature in your wallet. Testnet only, so the pieUSD is free testnet money.</p>
+<p class="wt-note">You sign one payment of 3&cent; in your wallet. Nothing is charged until you approve the signature in your wallet. Testnet only, so the USDC is free testnet money.</p>
 </div>
 <div id="wt-error" class="wt-error" hidden></div>
 <div id="wt-result" class="wt-result"></div>
 </div>
-<p class="sub" style="margin-top:14px">Need testnet pieUSD? Get free KITE at the <a href="https://faucet.gokite.ai" target="_blank" rel="noreferrer">Kite testnet faucet</a>, and testnet pieUSD from the Kite Passport sandbox (<code>kpass sandbox on</code>, then <code>kpass faucet drop</code>). No wallet yet? Install <a href="https://metamask.io/download/" target="_blank" rel="noreferrer">MetaMask</a>, or open this page inside your wallet app&rsquo;s browser.</p>
+<p class="sub" style="margin-top:14px">Need testnet USDC? Get it from the <a href="https://faucet.celo.org/" target="_blank" rel="noreferrer">Celo faucet</a> (Celo Sepolia). No wallet yet? Install <a href="https://metamask.io/download/" target="_blank" rel="noreferrer">MetaMask</a>, or open this page inside your wallet app&rsquo;s browser.</p>
 </section>
 
 <section>
@@ -264,7 +264,7 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <p class="sub">Three steps, every time. No account, no API key on the agent side. The agent just pays.</p>
 <div class="steps">
 <div class="step"><div class="n">1</div><div><h3>Agent asks, gets a 402</h3><p>The agent calls an endpoint with no payment and gets a 402 with the exact x402 terms: price, token, seller and timeout.</p></div></div>
-<div class="step"><div class="n">2</div><div><h3>Agent pays over x402 on Kite</h3><p>The agent signs a few cents in pieUSD and resends the call with a payment signature. The Pieverse facilitator verifies and settles it.</p></div></div>
+<div class="step"><div class="n">2</div><div><h3>Agent pays over x402 on Celo</h3><p>The agent signs a few cents in USDC and resends the call with a payment signature. The Celo x402 facilitator verifies and settles it.</p></div></div>
 <div class="step"><div class="n">3</div><div><h3>SERV Reasoning decides, quotes verified</h3><p>SERV Reasoning reads the gathered evidence with Prompt Guard and Shadow Agent on. Our code checks every quoted reason really exists in the evidence. No verified quote, no confident verdict. The receipt is logged with its transaction.</p></div></div>
 </div>
 </section>
@@ -301,7 +301,7 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 
 <section id="pricing">
 <h2>Pricing</h2>
-<p class="sub">Pay per call, in pieUSD on Kite testnet. No subscription, no free tier to abuse.</p>
+<p class="sub">Pay per call, in USDC on Celo. No subscription, no free tier to abuse.</p>
 <div class="grid">
 <div class="card"><h3>Claim</h3><div class="price">${prices.claim}<small> &cent;</small></div><p><code>POST /v1/verdict/claim</code></p><p>Is this claim supported by its sources? Verdicts: true / false / unclear.</p></div>
 <div class="card"><h3>Link</h3><div class="price">${prices.link}<small> &cent;</small></div><p><code>POST /v1/verdict/link</code></p><p>Is this page safe to buy from or sign up on? Verdicts: safe / risky / scam / unclear.</p></div>
@@ -315,7 +315,7 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div class="card"><h3>Quoted evidence, checked in code</h3><p>Every reason must quote the evidence word for word. Our code drops any reason whose quote is not in the evidence, and refuses a confident verdict with no verified reason.</p></div>
 <div class="card"><h3>Prompt-injection detection</h3><p>Hidden text that tries to instruct the agent, in comments or hidden elements, is flagged by the scanner and can only push a verdict toward risky, never toward safe.</p></div>
 <div class="card"><h3>Two SERV passes on hard calls</h3><p>Low-confidence or unparseable first answers are retried with the hard SERV model before we give up and answer unclear.</p></div>
-<div class="card"><h3>Auditable receipts</h3><p>Every paid call is logged with its verdict, price and settlement transaction, linked from the dashboard to the Kite testnet explorer.</p></div>
+<div class="card"><h3>Auditable receipts</h3><p>Every paid call is logged with its verdict, price and settlement transaction, linked from the dashboard to the Celo explorer.</p></div>
 </div>
 </section>
 
@@ -325,7 +325,7 @@ export function landingPage({ prices, paymentsMode, network, asset, payTo }) {
 <div class="btns"><a class="btn" href="/openapi.json">OpenAPI spec</a><a class="btn" href="/health">Health check</a><a class="btn" href="/stats">Stats as JSON</a><a class="btn" href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">README</a></div>
 </section>
 </main>
-<footer><div class="wrap">Verdict API &middot; Built for the OpenServ SERV Hackathon Edition 02, Kite track. Reasoning by SERV, payments by x402 on Kite. <a href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">Source on GitHub</a></div></footer>
+<footer><div class="wrap">Verdict API &middot; Celo branch, built for Loops House Agents Open for Business. Reasoning by SERV, payments by x402 on Celo. The OpenServ Kite version lives on master. <a href="https://github.com/Raga-vibe/verdict-api" target="_blank" rel="noreferrer">Source on GitHub</a></div></footer>
 <script>
 var box = document.getElementById("terms");
 var full = document.getElementById("terms-json");
@@ -357,12 +357,12 @@ function load(kind) {
   fetch("/v1/verdict/" + kind + "/terms").then(function (r) { return r.json(); }).then(function (j) {
     if (myToken !== loadToken) return;
     var a = (j.accepts && j.accepts[0]) || {};
-    var cents = a.amount ? (Number(a.amount) / 1e16).toFixed(0) : "?";
+    var cents = a.amount ? (Number(a.amount) / 1e4).toFixed(0) : "?";
     var fields = j.outputSchema && j.outputSchema.input && j.outputSchema.input.bodyFields
       ? Object.keys(j.outputSchema.input.bodyFields).map(function (f) { return f + (j.outputSchema.input.bodyFields[f].required ? " (required)" : " (optional)"); }).join(", ")
       : "-";
     box.replaceChildren(
-      row("Price", cents + " cents", "in pieUSD on Kite testnet"),
+      row("Price", cents + " cents", "in USDC on Celo (cNGN also accepted on mainnet)"),
       row("Network", a.network || "-"),
       row("Token", shortAddr(a.asset), a.asset || ""),
       row("Pay to", shortAddr(a.payTo), a.payTo || ""),
@@ -401,17 +401,17 @@ load("link");
   // the current state is also on the card as data-wt-state for debugging.
   var wtState = "detecting";
   var cardEl = document.getElementById("wt-card");
-  var CHAIN_ID = 2368;
-  var CHAIN_HEX = "0x940";
-  var NETWORK = "eip155:2368";
-  var RPC_URL = "https://rpc-testnet.gokite.ai/";
-  var EXPLORER = "https://testnet.kitescan.ai/";
-  var FAUCET = "https://faucet.gokite.ai";
+  var CHAIN_ID = 11142220;
+  var CHAIN_HEX = "0xaa044c";
+  var NETWORK = "eip155:11142220";
+  var RPC_URL = "https://forno.celo-sepolia.celo-testnet.org";
+  var EXPLORER = "https://celo-sepolia.blockscout.com/";
+  var FAUCET = "https://faucet.celo.org/";
   var PRESETS = {
     scam: "https://raw.githubusercontent.com/Raga-vibe/verdict-api/master/tests/fixtures/scam-1.html",
     honest: "https://raw.githubusercontent.com/Raga-vibe/verdict-api/master/tests/fixtures/honest-1.html"
   };
-  var MAX_UNITS_PER_CALL = 50000000000000000n;
+  var MAX_UNITS_PER_CALL = 50000n;
   function el(tag, text, cls) {
     var n = document.createElement(tag);
     if (text !== undefined && text !== null) n.textContent = text;
@@ -433,13 +433,13 @@ load("link");
   }
   function fmtUnits(u) {
     var n = BigInt(u);
-    var whole = n / 1000000000000000000n;
-    var frac = n % 1000000000000000000n;
+    var whole = n / 1000000n;
+    var frac = n % 1000000n;
     var f = frac.toString();
-    while (f.length < 18) f = "0" + f;
+    while (f.length < 6) f = "0" + f;
     return whole.toString() + "." + f.slice(0, 4);
   }
-  function centsOf(u) { return (Number(BigInt(u)) / 1e16).toFixed(0); }
+  function centsOf(u) { return (Number(BigInt(u)) / 1e4).toFixed(0); }
   // Fill a {placeholder} template. Split/join on purpose, not a regex:
   // backslashes do not survive this file's template literal (the same
   // trap that once broke the try-it widget), so no regex lives here.
@@ -508,14 +508,14 @@ load("link");
       if (String(id).toLowerCase() === CHAIN_HEX) return true;
       return eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] }).then(function () { return true; }).catch(function (e) {
         if (e && e.code === 4902) {
-          return eth.request({ method: "wallet_addEthereumChain", params: [{ chainId: CHAIN_HEX, chainName: "KiteAI Testnet", nativeCurrency: { name: "KITE", symbol: "KITE", decimals: 18 }, rpcUrls: [RPC_URL], blockExplorerUrls: [EXPLORER] }] }).then(function () { return true; }).catch(function (e2) {
-            if (isUserRejection(e2)) showError("Adding Kite testnet was cancelled in your wallet. Nothing was changed.");
-            else showError("Could not add Kite testnet to your wallet: " + String((e2 && e2.message) || e2));
+          return eth.request({ method: "wallet_addEthereumChain", params: [{ chainId: CHAIN_HEX, chainName: "Celo Sepolia", nativeCurrency: { name: "Celo", symbol: "CELO", decimals: 18 }, rpcUrls: [RPC_URL], blockExplorerUrls: [EXPLORER] }] }).then(function () { return true; }).catch(function (e2) {
+            if (isUserRejection(e2)) showError("Adding Celo Sepolia was cancelled in your wallet. Nothing was changed.");
+            else showError("Could not add Celo Sepolia to your wallet: " + String((e2 && e2.message) || e2));
             return false;
           });
         }
-        if (isUserRejection(e)) showError("Switching to Kite testnet was cancelled in your wallet. Nothing was changed.");
-        else showError("Could not switch to Kite testnet: " + String((e && e.message) || e));
+        if (isUserRejection(e)) showError("Switching to Celo Sepolia was cancelled in your wallet. Nothing was changed.");
+        else showError("Could not switch to Celo Sepolia: " + String((e && e.message) || e));
         return false;
       });
     });
@@ -525,7 +525,7 @@ load("link");
     if (!req || !account) return;
     eth.request({ method: "eth_call", params: [{ to: req.asset, data: balanceCallData(account) }, "latest"] }).then(function (hex) {
       var bal = BigInt(hex || "0x0");
-      balEl.textContent = fmtUnits(bal.toString()) + " pieUSD";
+      balEl.textContent = fmtUnits(bal.toString()) + " USDC";
       var tooLow = bal < BigInt(req.amount);
       checkBtn.disabled = tooLow;
       // The check button going dead with no message is how a visitor used
@@ -541,13 +541,13 @@ load("link");
     return eth.request({ method: "eth_call", params: [{ to: req.asset, data: balanceCallData(account) }, "latest"] }).then(function (hex) {
       var bal = BigInt(hex || "0x0");
       var amount = BigInt(req.amount);
-      balEl.textContent = fmtUnits(bal.toString()) + " pieUSD";
+      balEl.textContent = fmtUnits(bal.toString()) + " USDC";
       actionsEl.replaceChildren();
       if (bal < amount) {
         checkBtn.disabled = true;
         setWtState("balance_low", { cents: centsOf(req.amount) });
-        addActionLink("Get testnet pieUSD", FAUCET);
-        addActionButton("I have pieUSD, check again", false, function () { clearError(); refreshBalance(); });
+        addActionLink("Get testnet USDC", FAUCET);
+        addActionButton("I have USDC, check again", false, function () { clearError(); refreshBalance(); });
         return false;
       }
       setWtState("ready", { cents: centsOf(req.amount), address: shortAddr(account) });
@@ -558,7 +558,7 @@ load("link");
       checkBtn.disabled = true;
       actionsEl.replaceChildren();
       addActionButton("Retry balance check", false, function () { clearError(); refreshBalance(); });
-      showError("Could not read your pieUSD balance: " + String((e && e.message) || e));
+      showError("Could not read your USDC balance: " + String((e && e.message) || e));
       return false;
     });
   }
@@ -567,12 +567,12 @@ load("link");
     return ensureChain().then(function (ok) {
       if (!ok) {
         actionsEl.replaceChildren();
-        addActionButton("Switch to Kite testnet", true, function () { clearError(); syncWallet(); });
+        addActionButton("Switch to Celo Sepolia", true, function () { clearError(); syncWallet(); });
         return;
       }
       walletEl.hidden = false;
       addrEl.textContent = shortAddr(account);
-      netEl.textContent = "Kite testnet (2368)";
+      netEl.textContent = "Celo Sepolia (11142220)";
       return refreshBalance();
     });
   }
@@ -696,7 +696,7 @@ load("link");
         var a = challenge.accepts[i];
         if (a.scheme === "exact" && a.network === NETWORK) { req2 = a; break; }
       }
-      if (!req2) throw new Error("The server did not offer an exact pieUSD payment on Kite testnet. Nothing was signed.");
+      if (!req2) throw new Error("The server did not offer an exact USDC payment on Celo Sepolia. Nothing was signed.");
       if (String(req2.asset).toLowerCase() !== String(req.asset).toLowerCase()) throw new Error("The server asked to be paid in an unexpected token. Nothing was signed.");
       var amount = BigInt(req2.amount);
       if (amount <= 0n || amount > MAX_UNITS_PER_CALL) throw new Error("Refusing to sign: this check costs more than 5c. Nothing was signed.");
@@ -706,7 +706,7 @@ load("link");
       var extra = req2.extra || {};
       setWtState("awaiting_signature", { amount: fmtUnits(req2.amount), cents: centsOf(req2.amount) });
       var typed = {
-        domain: { name: extra.name || "pieUSD", version: extra.version || "1", chainId: CHAIN_ID, verifyingContract: req2.asset },
+        domain: { name: extra.name || "USDC", version: extra.version || "2", chainId: CHAIN_ID, verifyingContract: req2.asset },
         message: { from: account, to: req2.payTo, value: String(req2.amount), validAfter: "0", validBefore: String(validBefore), nonce: nonce },
         primaryType: "TransferWithAuthorization",
         types: {
@@ -740,7 +740,7 @@ load("link");
         return paid.text().then(function (t) {
           var msg = t;
           try { var j = JSON.parse(t); msg = j.error || j.code || t; } catch (e) { msg = t; }
-          if (paid.status === 402) throw new Error("The payment was rejected: " + String(msg).slice(0, 300) + " Your wallet was not charged. Check your pieUSD balance and try again.");
+          if (paid.status === 402) throw new Error("The payment was rejected: " + String(msg).slice(0, 300) + " Your wallet was not charged. Check your USDC balance and try again.");
           throw new Error("Paid request failed: HTTP " + paid.status + " " + String(msg).slice(0, 300));
         });
       }).then(function (out) {
@@ -796,9 +796,9 @@ export function dashboardPage() {
   const body = `${topNav("dashboard")}
 <main class="wrap">
 <div class="dash-head">
-<div class="eyebrow">Live earnings &middot; Kite testnet</div>
+<div class="eyebrow">Live earnings &middot; Celo</div>
 <h1>Dashboard</h1>
-<p class="lede" style="font-size:16px">Every paid verdict, as it happens. Payments by x402 on Kite testnet, reasoning by SERV.</p>
+<p class="lede" style="font-size:16px">Every paid verdict, as it happens. Payments by x402 on Celo, reasoning by SERV.</p>
 <div class="refresh-row"><span><span class="dot"></span><b style="color:var(--green)">Live</b></span><span id="updated" role="status">Updated just now</span><button class="pause-btn" id="pause-btn" type="button" aria-pressed="false">Pause updates</button><a href="/stats">Raw stats JSON</a></div>
 </div>
 
@@ -816,7 +816,7 @@ export function dashboardPage() {
 </div>
 
 <h2 style="margin-top:32px">Recent verdicts</h2>
-<p class="sub">Newest first, with the reason SERV gave. Transaction links open on the Kite testnet explorer.</p>
+<p class="sub">Newest first, with the reason SERV gave. Transaction links open on the Celo explorer.</p>
 <div class="filters" role="group" aria-label="Filter verdicts">
 <button class="chip" type="button" data-filter="all" aria-pressed="true">All</button>
 <button class="chip" type="button" data-filter="safe" aria-pressed="false">Safe</button>
@@ -949,7 +949,7 @@ function renderRecent() {
     if (x.model) meta.appendChild(el("span", "Model " + x.model));
     if (x.tx && /^[0-9a-fx]+$/i.test(x.tx)) {
       var txa = document.createElement("a");
-      txa.href = "https://testnet.kitescan.ai/tx/" + x.tx;
+      txa.href = "https://celo-sepolia.blockscout.com/tx/" + x.tx;
       txa.textContent = "View tx " + x.tx.slice(0, 10) + "...";
       txa.target = "_blank"; txa.rel = "noreferrer";
       meta.appendChild(txa);

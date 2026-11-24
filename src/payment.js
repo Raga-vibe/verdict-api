@@ -1,9 +1,21 @@
-// x402 v2 seller flow: exact EVM payment on Kite, verified and settled by Pieverse.
+// x402 v2 seller flow: exact EVM payment on Celo, verified and settled
+// by the Celo x402 facilitator (https://x402.celo.org/skill.md).
+//
+// Two payment options, both explicit price objects (the "$0.01" shorthand
+// throws on Celo, so it is never used here):
+//   1. USDC, EIP-3009, 6 decimals, extra { name: "USDC", version: "2" }.
+//      Sepolia 0x01C5C0122039549AD1493B8220cABEdD739BC44E,
+//      mainnet 0xcebA9300f2b948710d2653dD7B07f33A8B32118C.
+//   2. cNGN, Permit2, 6 decimals, extra { name: "cNGN", version: "1",
+//      assetTransferMethod: "permit2" }. Mainnet only: there is no
+//      Sepolia cNGN in the x402 token table, so on Sepolia only USDC is
+//      offered. The first cNGN payer approves Permit2 onchain.
 import { AsyncLocalStorage } from "node:async_hooks";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
-import { config, PRICES } from "./config.js";
+import { declareBuilderCodeExtension } from "@x402/extensions/builder-code";
+import { config, PRICES, PRICES_CNGN, CELO_TOKENS } from "./config.js";
 import { paymentRequiredBody, paymentFailedBody } from "./states.js";
 
 const OUTPUT_SCHEMA = {
@@ -20,22 +32,77 @@ function centsToUnits(cents) {
   return (BigInt(cents) * 10n ** BigInt(config.payments.decimals) / 100n).toString();
 }
 
-function paymentOption(kind) {
+function cngnToUnits(cngn) {
+  return (BigInt(cngn) * 10n ** BigInt(config.payments.cngnDecimals)).toString();
+}
+
+// ERC-8021 builder-code extension for x402 settlements. The facilitator
+// submits the settlement transaction, so we cannot append a calldata
+// suffix ourselves; instead the 402 response declares our code under
+// extensions["builder-code"].info.a, the client echoes it, and the
+// facilitator appends the Schema 2 suffix at settlement. Per Celo docs
+// this is ignored until the facilitator update ships, then applies
+// automatically. It only applies to x402 v2 payments.
+export function builderCodeExtension() {
+  return { "builder-code": declareBuilderCodeExtension(config.attributionCode) };
+}
+
+function usdcOption(kind) {
   return {
     scheme: "exact",
     network: config.payments.network,
     price: {
       asset: config.payments.asset,
       amount: centsToUnits(PRICES[kind]),
-      extra: { name: "pieUSD", version: "1" },
+      extra: { ...CELO_TOKENS.usdc.extra },
     },
     payTo: config.payments.payTo,
     maxTimeoutSeconds: 60,
   };
 }
 
+function cngnOption(kind) {
+  return {
+    scheme: "exact",
+    network: config.payments.network,
+    price: {
+      asset: config.payments.cngnAsset,
+      amount: cngnToUnits(PRICES_CNGN[kind]),
+      extra: { ...CELO_TOKENS.cngn.extra },
+    },
+    payTo: config.payments.payTo,
+    maxTimeoutSeconds: 60,
+  };
+}
+
+// All payment options for a kind, USDC first. cNGN only on mainnet.
+export function paymentOptions(kind) {
+  const options = [usdcOption(kind)];
+  if (config.payments.cngnAvailable) options.push(cngnOption(kind));
+  return options;
+}
+
+// Flat accept shape used in the 402 terms body (the middleware takes the
+// nested price shape above; the terms body uses the flat shape, as on
+// master, so existing x402 clients keep working).
+function acceptShape(option) {
+  return {
+    scheme: option.scheme,
+    network: option.network,
+    amount: option.price.amount,
+    asset: option.price.asset,
+    payTo: option.payTo,
+    maxTimeoutSeconds: option.maxTimeoutSeconds,
+    extra: option.price.extra,
+  };
+}
+
 export function paymentTerms(kind, base = "") {
-  const description = `Verdict API - ${kind} check (${PRICES[kind]} cents)`;
+  const usdcPrice = `${PRICES[kind]} cents USDC`;
+  const priceText = config.payments.cngnAvailable
+    ? `${usdcPrice} or ${PRICES_CNGN[kind]} cNGN`
+    : usdcPrice;
+  const description = `Verdict API - ${kind} check (${priceText})`;
   return {
     x402Version: 2,
     resource: {
@@ -43,15 +110,8 @@ export function paymentTerms(kind, base = "") {
       description,
       mimeType: "application/json",
     },
-    accepts: [{
-      scheme: "exact",
-      network: config.payments.network,
-      amount: centsToUnits(PRICES[kind]),
-      asset: config.payments.asset,
-      payTo: config.payments.payTo,
-      maxTimeoutSeconds: 60,
-      extra: { name: "pieUSD", version: "1" },
-    }],
+    accepts: paymentOptions(kind).map(acceptShape),
+    extensions: builderCodeExtension(),
     outputSchema: {
       input: { discoverable: true, method: "POST", bodyFields: inputFields(kind), type: "http" },
       output: OUTPUT_SCHEMA,
@@ -65,7 +125,22 @@ function inputFields(kind) {
   return { address: { type: "string", required: true, description: "Token contract address" }, chain: { type: "string", required: false, description: "e.g. base, bsc, solana" } };
 }
 
-const baseFacilitator = new HTTPFacilitatorClient({ url: config.payments.facilitator });
+// The Celo facilitator is metered: X402_API_KEY is sent as X-API-Key on
+// every facilitator call the middleware makes. Without it /settle
+// returns 401. The key is never exposed to buyers or the browser.
+// If it is missing we warn once at startup and let the middleware fail
+// settlement helpfully, instead of crashing /health or the server.
+if (!config.payments.apiKey && config.payments.mode === "on") {
+  console.warn("[celo] X402_API_KEY is not set. Paid calls will fail at /settle with 401. Create a key at https://x402.celo.org (Create API key, sign, copy once) and set X402_API_KEY. /health and free endpoints still work.");
+}
+const baseFacilitator = new HTTPFacilitatorClient({
+  url: config.payments.facilitator,
+  createAuthHeaders: async () => {
+    if (!config.payments.apiKey) return {};
+    const h = { "X-API-Key": config.payments.apiKey };
+    return { verify: h, settle: h, supported: h };
+  },
+});
 // Per-request payment context. The facilitator's verify outcome for a paid
 // call lives here, not in a module-level variable, so two paid calls in
 // flight at once can never read each other's reason. The middleware runs
@@ -111,8 +186,8 @@ export function requirePayment(kind, base = "") {
 
   const middleware = paymentMiddleware({
     [`POST ${base}/verdict/${kind}`]: {
-      accepts: [paymentOption(kind)],
-      description: `Verdict API - ${kind} check (${PRICES[kind]} cents)`,
+      accepts: paymentOptions(kind),
+      description: `Verdict API - ${kind} check (${PRICES[kind]} cents USDC${config.payments.cngnAvailable ? ` or ${PRICES_CNGN[kind]} cNGN` : ""})`,
       mimeType: "application/json",
     },
   }, resourceServer);

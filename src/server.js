@@ -1,6 +1,7 @@
 import express from "express";
 import { config, PRICES, API_VERSION } from "./config.js";
 import { requirePayment, paymentTerms } from "./payment.js";
+import { requireSelfAgent, isSelfVerifyEnabled, selfNetwork } from "./self.js";
 import { isServConfigured } from "./serv.js";
 import { serviceUnavailableBody, servState } from "./states.js";
 import { linkEvidence, claimEvidence, tokenEvidence } from "./evidence.js";
@@ -9,7 +10,13 @@ import { logReceipt, readReceipts, updateReceipt } from "./receipts.js";
 import { landingPage, dashboardPage } from "./pages.js";
 
 const app = express();
-app.use(express.json({ limit: "100kb" }));
+// Capture the exact raw body bytes: Self Agent ID's verifier.auth()
+// verifies the signature over those bytes, and a request with a body
+// but no raw body gets a 500 from the SDK. Do not remove this.
+app.use(express.json({
+  limit: "100kb",
+  verify: (req, _res, buf) => { req.rawBody = buf; },
+}));
 
 // Standard error envelope: { "error": "<human message>", "code": "<MACHINE_CODE>", ... }
 // The "error" string is kept so existing clients keep working; "code" is the
@@ -25,7 +32,7 @@ app.get("/", (req, res) => {
   const info = {
     name: "Verdict API",
     version: API_VERSION,
-    about: "Agents pay a few cents before acting and get a verdict with quoted evidence. Reasoning by SERV, payments by x402 on Kite.",
+    about: "Agents pay a few cents before acting and get a verdict with quoted evidence. Reasoning by SERV, payments by x402 on Celo (USDC, or cNGN on mainnet).",
     endpoints: Object.fromEntries(Object.entries(PRICES).map(([k, c]) => [`POST /v1/verdict/${k}`, `${c} cents`])),
     payments: config.payments.mode,
     health: "/health",
@@ -46,7 +53,18 @@ app.get("/", (req, res) => {
 
 // Health check: cheap, no keys, no payment.
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", version: API_VERSION, payments: config.payments.mode, timestamp: new Date().toISOString() });
+  res.json({
+    status: "ok",
+    version: API_VERSION,
+    payments: config.payments.mode,
+    network: config.payments.network,
+    asset: config.payments.asset,
+    cngn_available: config.payments.cngnAvailable,
+    self_verify: isSelfVerifyEnabled(),
+    self_network: selfNetwork(),
+    attribution_code: config.attributionCode,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Machine-readable API reference, generated from the live config so prices
@@ -120,7 +138,7 @@ function openapiDoc() {
     info: {
       title: "Verdict API",
       version: API_VERSION,
-      description: "Agents pay a few cents before acting and get a verdict with quoted evidence. Reasoning by SERV, payments by x402 on Kite. Prices: claim 2c, link 3c, token 5c, in pieUSD on Kite testnet.",
+      description: "Agents pay a few cents before acting and get a verdict with quoted evidence. Reasoning by SERV, payments by x402 on Celo. Prices: claim 2c, link 3c, token 5c, in USDC on Celo Sepolia (mainnet also accepts cNGN: 30 / 45 / 75 cNGN).",
     },
     servers: [{ url: config.publicUrl }],
     paths: {
@@ -211,7 +229,11 @@ function mountVerdictRoutes(base) {
     res.json(paymentTerms(req.params.kind, base));
   });
 
-  app.post(`${base}/verdict/claim`, ...handler("claim", (b) => claimEvidence(b.claim, b.sources || []), (b) => (!b.claim ? "claim is required" : null), base));
+  // POST /verdict/claim is the Self Agent ID track endpoint: when
+  // SELF_VERIFY=on, only agents verified by Self (age 18+, OFAC clear,
+  // sybil limit 1) reach the payment step. The gate runs before any
+  // payment is requested, so an unverified agent is never charged.
+  app.post(`${base}/verdict/claim`, requireSelfAgent(), ...handler("claim", (b) => claimEvidence(b.claim, b.sources || []), (b) => (!b.claim ? "claim is required" : null), base));
   app.post(`${base}/verdict/link`, ...handler("link", (b) => linkEvidence(b.url), (b) => (!/^https?:\/\//.test(b.url || "") ? "url must start with http(s)://" : null), base));
   app.post(`${base}/verdict/token`, ...handler("token", (b) => tokenEvidence(b.address, b.chain), (b) => (!b.address ? "address is required" : null), base));
 
@@ -226,7 +248,7 @@ mountVerdictRoutes("");
 mountVerdictRoutes("/v1");
 
 // Earnings dashboard (see src/pages.js). Polls /stats every 3 seconds.
-// Tx links go to the Kite testnet explorer.
+// Tx links go to Celoscan (mainnet) or the Celo Sepolia Blockscout.
 app.get("/dashboard", (req, res) => {
   res.type("html").send(dashboardPage());
 });
