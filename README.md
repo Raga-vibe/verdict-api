@@ -130,7 +130,7 @@ npm run eval
 ## Limitations
 
 - No live Celo deployment yet. The Celo flow is tested locally on Sepolia.
-- ERC-8004 registration is not done yet. The agent ID and registry tx will be listed here once registration is complete. Self implements the ERC-8004 roles, and the reference registries are separate contracts.
+- ERC-8004 registration is done. Agent ID 10163 on Celo mainnet, registered Nov 27, 2026. Identity Registry 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432. Registry tx link to be added.
 - cNGN is mainnet only. There is no Sepolia cNGN in the x402 token table, so Sepolia offers USDC only.
 - Prices in cNGN are a fixed assumption, 30 / 45 / 75 cNGN for 2c / 3c / 5c at about 1500 NGN per USD. Re-check the rate before mainnet.
 - Textile FX testnets are BSC testnet and Base Sepolia only. There is no Textile settlement contract on Celo Sepolia.
@@ -170,7 +170,7 @@ Attribution code: `celo_2d4c610c6d49`, assigned by Loops House. Set `ATTRIBUTION
 
 ## Roadmap
 
-- Register the agent on ERC-8004, list the agent ID and registry tx here.
+- ERC-8004 registration done, agent ID 10163. Add the registry tx link here.
 - First paid Sepolia call, then a small paid mainnet call, with tx links in Evidence.
 - First tagged Textile FX conversion on mainnet, plus a cNGN payment to a named user outside the team.
 - Live Celo deployment on a separate Render service, never the OpenServ one.
