@@ -166,7 +166,7 @@ Facilitator: Sepolia `https://api.x402.sepolia.celo.org`, mainnet `https://api.x
 
 Self registry: mainnet `0xaC3DF9ABf80d0F5c020C06B04Cced27763355944`, Sepolia `0x043DaCac8b0771DD5b444bCC88f2f8BBDBEdd379`.
 
-Attribution code: `verdict_api` by default, set `ATTRIBUTION_CODE` to an assigned `celo_xxxxxxxx` code if Loops issues one.
+Attribution code: `celo_2d4c610c6d49`, assigned by Loops House. Set `ATTRIBUTION_CODE` to override it.
 
 ## Roadmap
 
