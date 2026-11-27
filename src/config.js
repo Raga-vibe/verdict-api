@@ -31,10 +31,10 @@ const facilitatorUrl = (
 // ERC-8021 builder code. Any string matching [a-z0-9_], 1-32 chars, is a
 // valid code. If Loops / Celo issues an assigned code (celo_xxxxxxxx),
 // set ATTRIBUTION_CODE to that assigned code; programs only credit the
-// assigned code, not one derived here. Default is a descriptive fallback.
+// assigned code, not one derived here. Assigned code from Loops House, 27 Nov 2026.
 function normalizeAttributionCode(raw) {
-  const v = String(raw || "verdict_api").trim().toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 32);
-  return /^[a-z0-9_]{1,32}$/.test(v) ? v : "verdict_api";
+  const v = String(raw || "celo_2d4c610c6d49").trim().toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 32);
+  return /^[a-z0-9_]{1,32}$/.test(v) ? v : "celo_2d4c610c6d49";
 }
 
 // Celo token addresses, from the x402 Celo skill token table.
