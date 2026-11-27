@@ -1,0 +1,26 @@
+{
+  "description": "A paid second opinion for AI agents on Celo. Before an agent buys, signs up, or trades, it asks Verdict API is this safe, pays a few cents over x402 on Celo, and gets a clear verdict with quoted evidence. Built for Loops House Agents Open for Business, Track 3 Self Agent ID and Track 1 Stablecoin Corridors with cNGN.",
+  "name": "Verdict API",
+  "registrations": [],
+  "services": [
+    {
+      "endpoint": "https://github.com/Raga-vibe/verdict-api/tree/celo",
+      "name": "verdict-claim",
+      "type": "web",
+      "x402Support": true
+    },
+    {
+      "endpoint": "https://github.com/Raga-vibe/verdict-api/tree/celo",
+      "name": "verdict-link",
+      "type": "web",
+      "x402Support": true
+    },
+    {
+      "endpoint": "https://github.com/Raga-vibe/verdict-api/tree/celo",
+      "name": "verdict-token",
+      "type": "web",
+      "x402Support": true
+    }
+  ],
+  "x402Support": true
+}
