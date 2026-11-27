@@ -123,7 +123,7 @@ npm run eval
 | Textile FX sweep, cNGN to USDT | Live in code, dry-run by default | `scripts/textile-sweep.js` |
 | Quote verification in code | Live | `src/verdict.js`, tests |
 | Injection scan | Live | `src/injection.js`, tests |
-| ERC-8004 registration | Not done yet | See below |
+| ERC-8004 registration | Live | Agent ID 10163 on Celo mainnet |
 | Live Celo deployment | Not built yet | No Render URL for Celo yet |
 | Real mainnet paid call | Not done yet | No tx link yet |
 
